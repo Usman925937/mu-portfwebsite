@@ -933,12 +933,12 @@ document.addEventListener("DOMContentLoaded", function(){
   }
   var liBtn = document.getElementById("linkedinBtn");
   if(liBtn) liBtn.addEventListener("click", function(){ openExternal("https://www.linkedin.com/in/muhammadusman77/"); });
-  // Wire all external links to open in new tab without Claude warning
+  // Wire all external links to open in new tab reliably
   document.querySelectorAll('a[href^="https://"]').forEach(function(a){
     a.addEventListener("click", function(e){
       e.preventDefault();
       var url = a.getAttribute("href");
-      if(url) window.open(url, "_blank", "noopener,noreferrer");
+      if(url) openExternal(url);
     });
   });
   // Contact links (clink class)
@@ -946,9 +946,12 @@ document.addEventListener("DOMContentLoaded", function(){
     el.addEventListener("click", function(e){
       e.preventDefault();
       var url = el.getAttribute("href");
-      if(url && url.startsWith("http")) window.open(url,"_blank","noopener,noreferrer");
+      if(url && url.startsWith("http")) openExternal(url);
     });
   });
+  // GitHub button (override earlier window.open)
+  var ghBtn2 = document.getElementById("githubBtn");
+  if(ghBtn2) ghBtn2.addEventListener("click", function(){ openExternal("https://github.com/Usman925937/"); });
 });
 
 // Scroll reveal
