@@ -3,27 +3,19 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Muhammad Usman — Data-Driven Audit Professional" },
+      { name: "description", content: "Portfolio of Muhammad Usman, data-driven audit professional." },
     ],
   }),
-  component: Index,
+  component: PortfolioPage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function PortfolioPage() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <iframe
+      src="/portfolio.html"
+      title="Portfolio"
+      style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh", border: 0 }}
+    />
   );
 }
