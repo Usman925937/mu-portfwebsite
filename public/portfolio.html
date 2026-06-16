@@ -309,8 +309,12 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .n2b{top:calc(50% - 15px);left:calc(50% + 82px);}
   .n2c{top:calc(50% + 67px);left:calc(50% - 15px);}
   .n2d{top:calc(50% - 15px);left:calc(50% - 112px);}
-  /* Stat chips smaller on mobile */
-  .stat-chip{font-size:0.52rem;padding:0.28rem 0.55rem;}
+  /* Stat chips smaller on mobile + keep inside viewport */
+  .hero-right{overflow:visible;}
+  .stat-chip{font-size:0.52rem;padding:0.28rem 0.55rem;max-width:42%;white-space:normal;line-height:1.25;text-align:center;}
+  .stat-chip:nth-child(1){top:0;left:2%;}
+  .stat-chip:nth-child(2){top:6%;right:2%;}
+  .stat-chip:nth-child(3){bottom:2%;right:auto;left:50%;transform:translateX(-50%);max-width:78%;}
   .acca-pill{font-size:0.54rem;padding:0.3rem 0.8rem;bottom:-4%;}
   /* Layout fixes */
   .about-grid,.edu-grid,.rec-grid,.contact-grid{grid-template-columns:1fr;gap:1.5rem;}
