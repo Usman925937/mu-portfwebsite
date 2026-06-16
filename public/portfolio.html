@@ -74,7 +74,7 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(8,18,31,0.95);ba
 .skill-node-icon::before{content:"";position:absolute;inset:-3px;border-radius:12px;background:linear-gradient(135deg,rgba(201,168,76,.5),transparent 60%);opacity:0;transition:opacity .35s;z-index:-1;filter:blur(6px);}
 .skill-node:hover .skill-node-icon{border-color:var(--gold);box-shadow:0 0 30px rgba(201,168,76,.55),0 0 60px rgba(201,168,76,.2);transform:scale(1.18) translateY(-2px);}
 .skill-node:hover .skill-node-icon::before{opacity:1;}
-.skill-node-label{font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-text);font-weight:600;background:rgba(8,18,31,.9);padding:2px 5px;border-radius:2px;white-space:nowrap;position:relative;z-index:5;transition:color .3s;}
+.skill-node-label{font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-text);font-weight:600;background:rgba(8,18,31,.95);padding:2px 6px;border-radius:2px;white-space:nowrap;position:relative;z-index:8;transition:color .3s;}
 .skill-node:hover .skill-node-label{color:var(--gold);text-shadow:0 0 8px rgba(201,168,76,.6);}
 .n1a{top:calc(50% - 105px - 22px);left:calc(50% - 22px);}
 .n1b{top:calc(50% - 22px);left:calc(50% + 83px);}
@@ -89,8 +89,8 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(8,18,31,0.95);ba
 @keyframes dash{to{stroke-dashoffset:-80;}}
 .stat-chip{position:absolute;padding:.45rem .9rem;background:rgba(8,18,31,.92);border:1px solid rgba(201,168,76,.28);border-radius:3px;font-size:.66rem;color:var(--gold-light);font-weight:600;letter-spacing:.04em;backdrop-filter:blur(8px);white-space:nowrap;animation:chipFloat 5s ease-in-out infinite;box-shadow:0 4px 24px rgba(0,0,0,.4),0 0 0 1px rgba(201,168,76,.05);}
 .stat-chip:nth-child(1){top:3%;left:0%;animation-delay:0s;}
-.stat-chip:nth-child(2){top:14%;right:0%;animation-delay:1.2s;}
-.stat-chip:nth-child(3){bottom:20%;right:0%;animation-delay:2.4s;}
+.stat-chip:nth-child(2){top:14%;right:-2%;animation-delay:1.2s;}
+.stat-chip:nth-child(3){bottom:6%;right:-4%;animation-delay:2.4s;z-index:15;}
 .stat-chip:nth-child(4){bottom:6%;left:3%;animation-delay:3.6s;}
 @keyframes chipFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
 .acca-pill{position:absolute;bottom:-2%;left:50%;transform:translateX(-50%);padding:.5rem 1.4rem;background:linear-gradient(90deg,rgba(201,168,76,.18),rgba(201,168,76,.06));border:1px solid rgba(201,168,76,.5);border-radius:40px;font-size:.7rem;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem;white-space:nowrap;box-shadow:0 6px 30px rgba(201,168,76,.15);}
@@ -410,7 +410,7 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
               <rect x="7" y="7" width="4" height="12" rx="0.5" fill="#f3a712" opacity="0.85"/>
               <rect x="13" y="3" width="4" height="16" rx="0.5" fill="#f3a712" opacity="0.65"/>
             </svg></div><span class="skill-node-label">Power BI</span></div>
-      <div class="skill-node n2a"><div class="skill-node-icon" style="background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(201,168,76,.04));border-color:rgba(201,168,76,.4);"><span style="font-size:.85rem;">🧾</span></div><span class="skill-node-label">ACCA Participant</span></div>
+      <div class="skill-node n2a"><div class="skill-node-icon" style="background:linear-gradient(135deg,rgba(201,168,76,.22),rgba(201,168,76,.04));border-color:rgba(201,168,76,.5);"><span style="font-size:.58rem;font-weight:900;color:var(--gold-light);letter-spacing:.02em;">ACCA</span></div><span class="skill-node-label">ACCA</span></div>
       <div class="skill-node n2b"><div class="skill-node-icon" style="background:linear-gradient(135deg,rgba(107,63,160,.2),rgba(107,63,160,.04));border-color:rgba(156,39,176,.4);"><span style="font-size:1rem;">🤖</span></div><span class="skill-node-label">AI Tools</span></div>
       <div class="skill-node n2c"><div class="skill-node-icon" style="background:linear-gradient(135deg,rgba(0,114,207,.2),rgba(0,114,207,.04));border-color:rgba(0,114,207,.35);"><span style="font-size:.58rem;font-weight:900;color:#60a5fa;letter-spacing:-.01em;">PPT</span></div><span class="skill-node-label">PowerPoint</span></div>
       <div class="skill-node n2d"><div class="skill-node-icon" style="background:linear-gradient(135deg,rgba(0,100,180,.2),rgba(0,100,180,.04));border-color:rgba(0,114,207,.35);"><span style="font-size:.58rem;font-weight:900;color:#90caf9;letter-spacing:-.01em;">DOC</span></div><span class="skill-node-label">MS Word</span></div>
