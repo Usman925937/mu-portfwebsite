@@ -287,37 +287,37 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .hero{grid-template-columns:1fr;padding:5rem 1.5rem 3rem;}
   .hero-right{
     display:flex;
-    height:300px;
-    margin-top:1rem;
+    height:420px;
+    margin-top:1.5rem;
     justify-content:center;
+    overflow:visible;
   }
-  /* Scale down the orbit diagram for mobile */
-  .hex-stage{width:240px;height:240px;}
-  .orbit-1{width:130px;height:130px;margin:-65px;}
-  .orbit-2{width:195px;height:195px;margin:-97.5px;}
-  .orbit-3{width:232px;height:232px;margin:-116px;}
-  .hex-center{width:84px;height:84px;}
-  .hex-center-icon{font-size:1.1rem;}
-  .hex-center-label{font-size:0.4rem;}
-  .skill-node-icon{width:30px;height:30px;font-size:0.85rem;}
-  .skill-node-label{font-size:0.44rem;padding:1px 4px;}
-  /* Reposition orbit-1 nodes (65px radius) */
-  .n1a{top:calc(50% - 65px - 15px);left:calc(50% - 15px);}
-  .n1b{top:calc(50% - 15px);left:calc(50% + 50px);}
-  .n1c{top:calc(50% + 35px);left:calc(50% - 15px);}
-  .n1d{top:calc(50% - 15px);left:calc(50% - 80px);}
-  /* Reposition orbit-2 nodes (97px radius) */
-  .n2a{top:calc(50% - 97px - 15px);left:calc(50% - 15px);}
-  .n2b{top:calc(50% - 15px);left:calc(50% + 82px);}
-  .n2c{top:calc(50% + 67px);left:calc(50% - 15px);}
-  .n2d{top:calc(50% - 15px);left:calc(50% - 112px);}
-  /* Stat chips smaller on mobile + keep inside viewport */
-  .hero-right{overflow:visible;}
-  .stat-chip{font-size:0.52rem;padding:0.28rem 0.55rem;max-width:42%;white-space:normal;line-height:1.25;text-align:center;}
+  /* Scale orbit diagram for tablet — larger than before */
+  .hex-stage{width:340px;height:340px;}
+  .orbit-1{width:184px;height:184px;margin:-92px;}
+  .orbit-2{width:276px;height:276px;margin:-138px;}
+  .orbit-3{width:328px;height:328px;margin:-164px;}
+  .hex-center{width:110px;height:110px;}
+  .hex-center-icon{font-size:1.4rem;}
+  .hex-center-label{font-size:0.48rem;}
+  .skill-node-icon{width:38px;height:38px;font-size:1rem;}
+  .skill-node-label{font-size:0.5rem;padding:2px 5px;}
+  /* orbit-1 nodes (radius 92, icon 19) */
+  .n1a{top:calc(50% - 92px - 19px);left:calc(50% - 19px);}
+  .n1b{top:calc(50% - 19px);left:calc(50% + 73px);}
+  .n1c{top:calc(50% + 54px);left:calc(50% - 19px);}
+  .n1d{top:calc(50% - 19px);left:calc(50% - 111px);}
+  /* orbit-2 nodes at 45° diagonals (radius 138 → 97 on each axis) */
+  .n2a{top:calc(50% - 97px - 19px);left:calc(50% + 97px - 19px);}
+  .n2b{top:calc(50% + 97px - 19px);left:calc(50% + 97px - 19px);}
+  .n2c{top:calc(50% + 97px - 19px);left:calc(50% - 97px - 19px);}
+  .n2d{top:calc(50% - 97px - 19px);left:calc(50% - 97px - 19px);}
+  /* Stat chips smaller on tablet + keep inside viewport */
+  .stat-chip{font-size:0.56rem;padding:0.3rem 0.6rem;max-width:44%;white-space:normal;line-height:1.25;text-align:center;}
   .stat-chip:nth-child(1){top:0;left:2%;}
   .stat-chip:nth-child(2){top:6%;right:2%;}
-  .stat-chip:nth-child(3){bottom:2%;right:auto;left:50%;transform:translateX(-50%);max-width:78%;}
-  .acca-pill{font-size:0.54rem;padding:0.3rem 0.8rem;bottom:-4%;}
+  .stat-chip:nth-child(3){bottom:2%;right:auto;left:50%;transform:translateX(-50%);max-width:80%;}
+  .acca-pill{font-size:0.58rem;padding:0.32rem 0.9rem;bottom:-4%;}
   /* Layout fixes */
   .about-grid,.edu-grid,.rec-grid,.contact-grid{grid-template-columns:1fr;gap:1.5rem;}
   .why-grid{grid-template-columns:1fr 1fr;gap:1px;}
@@ -339,21 +339,26 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .certs-grid{grid-template-columns:1fr;}
   .nav-links{gap:0.6rem;}
   .nav-links a{font-size:0.58rem;}
-  .hero-right{height:260px;}
-  .hex-stage{width:200px;height:200px;}
-  .orbit-1{width:108px;height:108px;margin:-54px;}
-  .orbit-2{width:162px;height:162px;margin:-81px;}
-  .orbit-3{width:194px;height:194px;margin:-97px;}
-  .n1a{top:calc(50% - 54px - 14px);left:calc(50% - 14px);}
-  .n1b{top:calc(50% - 14px);left:calc(50% + 40px);}
-  .n1c{top:calc(50% + 26px);left:calc(50% - 14px);}
-  .n1d{top:calc(50% - 14px);left:calc(50% - 68px);}
-  .n2a{top:calc(50% - 81px - 14px);left:calc(50% - 14px);}
-  .n2b{top:calc(50% - 14px);left:calc(50% + 67px);}
-  .n2c{top:calc(50% + 53px);left:calc(50% - 14px);}
-  .n2d{top:calc(50% - 14px);left:calc(50% - 95px);}
-  .stat-chip{font-size:0.48rem;padding:0.24rem 0.5rem;max-width:46%;}
-  .stat-chip:nth-child(3){max-width:88%;bottom:0;}
+  .hero-right{height:360px;}
+  .hex-stage{width:290px;height:290px;}
+  .orbit-1{width:156px;height:156px;margin:-78px;}
+  .orbit-2{width:234px;height:234px;margin:-117px;}
+  .orbit-3{width:278px;height:278px;margin:-139px;}
+  .hex-center{width:96px;height:96px;}
+  .skill-node-icon{width:34px;height:34px;font-size:0.9rem;}
+  .skill-node-label{font-size:0.46rem;padding:1px 4px;}
+  /* orbit-1 (radius 78, icon 17) */
+  .n1a{top:calc(50% - 78px - 17px);left:calc(50% - 17px);}
+  .n1b{top:calc(50% - 17px);left:calc(50% + 61px);}
+  .n1c{top:calc(50% + 44px);left:calc(50% - 17px);}
+  .n1d{top:calc(50% - 17px);left:calc(50% - 95px);}
+  /* orbit-2 diagonals (radius 117 → 83 on each axis) */
+  .n2a{top:calc(50% - 83px - 17px);left:calc(50% + 83px - 17px);}
+  .n2b{top:calc(50% + 83px - 17px);left:calc(50% + 83px - 17px);}
+  .n2c{top:calc(50% + 83px - 17px);left:calc(50% - 83px - 17px);}
+  .n2d{top:calc(50% - 83px - 17px);left:calc(50% - 83px - 17px);}
+  .stat-chip{font-size:0.5rem;padding:0.26rem 0.55rem;max-width:48%;}
+  .stat-chip:nth-child(3){max-width:90%;bottom:0;}
 }
 </style>
 </head>
