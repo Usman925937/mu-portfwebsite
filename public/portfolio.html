@@ -943,8 +943,7 @@ document.addEventListener("DOMContentLoaded", function(){
     a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
-  var liBtn = document.getElementById("linkedinBtn");
-  if(liBtn) liBtn.addEventListener("click", function(e){ e.preventDefault(); openExternal("https://www.linkedin.com/in/muhammadusman77/"); });
+  // LinkedIn anchor is handled by the generic https-link interceptor below
   // Wire all external links to open in new tab reliably
   document.querySelectorAll('a[href^="https://"]').forEach(function(a){
     a.addEventListener("click", function(e){
