@@ -387,8 +387,8 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
     <p class="hero-subtitle">Data-Driven Finance Professional</p>
     <p class="hero-desc">A finance and accounting student with deep expertise in <strong>data analytics, financial modeling, and audit tools</strong> — bringing a rare combination of accounting acumen and data technology skills to the external audit profession.</p>
     <div class="hero-ctas">
-      <button class="btn-primary" id="viewWorkBtn" type="button">View My Work</button>
-      <button class="btn-outline" id="linkedinBtn" type="button">LinkedIn Profile ↗</button>
+      <a class="btn-primary" id="viewWorkBtn" href="#experience" role="button">View My Work</a>
+      <a class="btn-outline" id="linkedinBtn" href="https://www.linkedin.com/in/muhammadusman77/" target="_blank" rel="noopener noreferrer" role="button">LinkedIn Profile ↗</a>
     </div>
     <div class="hero-stats">
       <div><div class="stat-num">50+</div><div class="stat-label">Certifications</div></div>
@@ -933,10 +933,10 @@ document.addEventListener("DOMContentLoaded", function(){
   // GitHub button
   var ghBtn = document.getElementById("githubBtn");
   if(ghBtn) ghBtn.addEventListener("click", function(){ window.open("https://github.com/Usman925937/","_blank"); });
-  // View My Work -> Experience
+  // View My Work -> smooth scroll to Experience
   var vwBtn = document.getElementById("viewWorkBtn");
-  if(vwBtn) vwBtn.addEventListener("click", function(){ navScroll("experience"); });
-  // LinkedIn — use a real anchor click so it works inside iframes/sandboxes
+  if(vwBtn) vwBtn.addEventListener("click", function(e){ e.preventDefault(); navScroll("experience"); });
+  // LinkedIn helper for sandboxed iframes
   function openExternal(url){
     try { var w = window.open(url, "_blank", "noopener,noreferrer"); if(w) return; } catch(e){}
     var a = document.createElement("a");
@@ -944,7 +944,7 @@ document.addEventListener("DOMContentLoaded", function(){
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
   var liBtn = document.getElementById("linkedinBtn");
-  if(liBtn) liBtn.addEventListener("click", function(){ openExternal("https://www.linkedin.com/in/muhammadusman77/"); });
+  if(liBtn) liBtn.addEventListener("click", function(e){ e.preventDefault(); openExternal("https://www.linkedin.com/in/muhammadusman77/"); });
   // Wire all external links to open in new tab reliably
   document.querySelectorAll('a[href^="https://"]').forEach(function(a){
     a.addEventListener("click", function(e){
