@@ -328,8 +328,13 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   footer{padding:1.8rem 1.5rem;flex-direction:column;gap:1rem;text-align:center;}
   .hero h1{font-size:3rem;}
   .hero-stats{gap:1.5rem;flex-wrap:wrap;}
-  .exp-card{grid-template-columns:1fr;gap:0.8rem;}
-  .exp-right{text-align:left;}
+  .exp-card{grid-template-columns:1fr;gap:0.7rem;padding:1.25rem;}
+  .exp-right{text-align:left;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;}
+  .exp-right .exp-type{margin-top:0;}
+  .exp-role{font-size:0.92rem;}
+  .exp-org{font-size:0.76rem;line-height:1.45;}
+  .exp-bullets li{font-size:0.74rem;line-height:1.55;}
+  .exp-skill{font-size:0.58rem;padding:0.16rem 0.45rem;}
   .tools-grid{grid-template-columns:1fr;}
   .certs-grid{grid-template-columns:1fr 1fr;}
   .projects-grid{grid-template-columns:1fr;}
@@ -387,8 +392,8 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
     <p class="hero-subtitle">Data-Driven Finance Professional</p>
     <p class="hero-desc">A finance and accounting student with deep expertise in <strong>data analytics, financial modeling, and audit tools</strong> — bringing a rare combination of accounting acumen and data technology skills to the external audit profession.</p>
     <div class="hero-ctas">
-      <button class="btn-primary" id="viewWorkBtn" type="button">View My Work</button>
-      <button class="btn-outline" id="linkedinBtn" type="button">LinkedIn Profile ↗</button>
+      <a class="btn-primary" id="viewWorkBtn" href="#experience" role="button">View My Work</a>
+      <a class="btn-outline" id="linkedinBtn" href="https://www.linkedin.com/in/muhammadusman77/" target="_blank" rel="noopener noreferrer" role="button">LinkedIn Profile ↗</a>
     </div>
     <div class="hero-stats">
       <div><div class="stat-num">50+</div><div class="stat-label">Certifications</div></div>
@@ -492,10 +497,9 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Generative AI Specialist</div>
         <div class="exp-org">Surt Works &nbsp;·&nbsp; U.S.-Based Virtual Assistance & Customer Service Agency</div>
         <ul class="exp-bullets">
-          <li>Worked full-time executing AI projects brought in by the sales team at a U.S.-based virtual assistance and customer service agency — operating in a professional, client-facing environment.</li>
-          <li>Designed and optimised prompts across ChatGPT, Claude, Grok, Perplexity, and Gemini to improve output quality, consistency, and efficiency across diverse client deliverables.</li>
-          <li>Extracted insights from large datasets using AI tools to support client decision-making — applying analytical thinking to unstructured information at scale.</li>
-          <li>Conducted AI-powered research and streamlined workflows using Claude and Comet browser, reducing project delivery time and improving output quality across the team.</li>
+          <li>Executed client-facing generative AI projects at a U.S.-based VA &amp; customer service agency.</li>
+          <li>Engineered prompts across ChatGPT, Claude, Grok, Perplexity &amp; Gemini for consistent, high-quality output.</li>
+          <li>Extracted insights from large datasets and streamlined research workflows using Claude &amp; Comet — cutting delivery time.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Generative AI</span>
@@ -519,10 +523,9 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Accounting & Finance Intern</div>
         <div class="exp-org">Grip Engineers &nbsp;·&nbsp; ISO 9001-Certified Company</div>
         <ul class="exp-bullets">
-          <li>Completed a finance department internship at an ISO 9001-certified engineering firm — gaining direct exposure to corporate financial operations and compliance standards.</li>
-          <li>Assisted the finance team with day-to-day financial operations including transaction recording, account management, and period-end support tasks.</li>
-          <li>Maintained and updated financial records using Microsoft Excel — applying advanced spreadsheet skills in a live finance environment with real accountability.</li>
-          <li>Supported data entry, financial documentation, and management reporting tasks — building fluency in professional finance workflows and document control.</li>
+          <li>Finance internship at an ISO 9001-certified engineering firm — direct exposure to corporate finance operations.</li>
+          <li>Supported transaction recording, account management &amp; period-end tasks alongside the finance team.</li>
+          <li>Maintained financial records in Excel and supported management reporting in a live, accountable environment.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Microsoft Excel</span>
@@ -546,11 +549,10 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Accounting & Finance Intern — Banking Operations</div>
         <div class="exp-org">Askari Bank</div>
         <ul class="exp-bullets">
-          <li>Gained hands-on experience in live banking operations at one of Pakistan's leading banks — covering financial reconciliation, compliance processes, and regulatory workflows.</li>
-          <li>Assisted with voucher reconciliation and bank card record management — developing precision and attention to detail in high-stakes financial environments.</li>
-          <li>Learned KYC (Know Your Customer) and Compliance Form (C Form) procedures, building practical understanding of regulatory adherence in a regulated financial institution.</li>
-          <li>Built an Excel-based system that consolidated locker data from approximately 30 separate files into a single structured record — directly reducing manual effort and improving data reliability.</li>
-          <li>Gained comprehensive understanding of internal banking workflows, operational controls, and regulatory processes — all directly transferable to external audit of financial institutions.</li>
+          <li>Hands-on exposure to live banking operations — reconciliation, compliance &amp; regulatory workflows.</li>
+          <li>Handled voucher reconciliation and bank card record management with high precision.</li>
+          <li>Learned KYC and C Form procedures inside a regulated financial institution.</li>
+          <li>Built an Excel system consolidating ~30 locker files into one structured record — reducing manual effort.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Banking Operations</span>
@@ -575,8 +577,8 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Excel Trainer — Peer Instructor</div>
         <div class="exp-org">Foundation University Islamabad</div>
         <ul class="exp-bullets">
-          <li>Designed and delivered Excel training sessions for fellow BS Accounting &amp; Finance students — covering lookup functions, Pivot Tables, Power Query, conditional logic, and financial modeling.</li>
-          <li>Simplified complex Excel concepts into structured, practical lessons — reinforcing deep personal mastery through the discipline of teaching others in a professional setting.</li>
+          <li>Delivered Excel training to BS Accounting &amp; Finance peers — lookups, Pivot Tables, Power Query &amp; financial modeling.</li>
+          <li>Simplified complex concepts into structured lessons, reinforcing mastery through teaching.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Advanced Excel</span>
@@ -933,18 +935,17 @@ document.addEventListener("DOMContentLoaded", function(){
   // GitHub button
   var ghBtn = document.getElementById("githubBtn");
   if(ghBtn) ghBtn.addEventListener("click", function(){ window.open("https://github.com/Usman925937/","_blank"); });
-  // View My Work -> Experience
+  // View My Work -> smooth scroll to Experience
   var vwBtn = document.getElementById("viewWorkBtn");
-  if(vwBtn) vwBtn.addEventListener("click", function(){ navScroll("experience"); });
-  // LinkedIn — use a real anchor click so it works inside iframes/sandboxes
+  if(vwBtn) vwBtn.addEventListener("click", function(e){ e.preventDefault(); navScroll("experience"); });
+  // LinkedIn helper for sandboxed iframes
   function openExternal(url){
     try { var w = window.open(url, "_blank", "noopener,noreferrer"); if(w) return; } catch(e){}
     var a = document.createElement("a");
     a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }
-  var liBtn = document.getElementById("linkedinBtn");
-  if(liBtn) liBtn.addEventListener("click", function(){ openExternal("https://www.linkedin.com/in/muhammadusman77/"); });
+  // LinkedIn anchor is handled by the generic https-link interceptor below
   // Wire all external links to open in new tab reliably
   document.querySelectorAll('a[href^="https://"]').forEach(function(a){
     a.addEventListener("click", function(e){
