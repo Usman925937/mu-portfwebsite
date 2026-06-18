@@ -24,7 +24,9 @@ nav{position:fixed;top:0;width:100%;z-index:200;background:rgba(8,18,31,0.95);ba
 
 /* HERO */
 .hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:5rem 5rem 3rem;gap:3rem;position:relative;overflow:hidden;}
-.hero-bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(201,168,76,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);}
+.hero-bg-grid{position:absolute;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(201,168,76,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);}
+.hero-left,.hero-right{position:relative;z-index:1;}
+.btn-primary,.btn-outline{cursor:pointer;position:relative;z-index:2;}
 .hero-left{display:flex;flex-direction:column;justify-content:center;}
 .hero-eyebrow{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:1.4rem;font-weight:500;}
 .hero h1{font-family:"Playfair Display",serif;font-size:clamp(3rem,5vw,5rem);color:var(--white);line-height:1.05;margin-bottom:.4rem;}
