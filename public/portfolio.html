@@ -325,12 +325,23 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .about-grid,.edu-grid,.rec-grid,.contact-grid{grid-template-columns:1fr;gap:1.5rem;}
   .why-grid{grid-template-columns:1fr 1fr;gap:1px;}
   section,.why-section{padding:3.5rem 1.5rem;}
-  nav{padding:0 1.2rem;}
-  .nav-links{gap:1rem;}
-  .nav-links a{font-size:0.62rem;letter-spacing:0.06em;}
+  nav{padding:0 1rem;height:56px;}
+  .nav-logo{font-size:.95rem;}
+  .nav-links{gap:1rem;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;mask-image:linear-gradient(to right,#000 88%,transparent);}
+  .nav-links::-webkit-scrollbar{display:none;}
+  .nav-links li{flex:0 0 auto;}
+  .nav-links a,.nav-btn{font-size:0.64rem;letter-spacing:0.08em;white-space:nowrap;}
   footer{padding:1.8rem 1.5rem;flex-direction:column;gap:1rem;text-align:center;}
-  .hero h1{font-size:3rem;}
-  .hero-stats{gap:1.5rem;flex-wrap:wrap;}
+  .hero{padding:4.5rem 1.25rem 2.5rem;gap:1.5rem;}
+  .hero h1{font-size:2.7rem;}
+  .hero-eyebrow{font-size:.6rem;letter-spacing:.16em;margin-bottom:1rem;}
+  .hero-subtitle{font-size:.92rem;margin-bottom:1.2rem;}
+  .hero-desc{font-size:.84rem;line-height:1.75;margin-bottom:1.8rem;}
+  .hero-ctas{gap:.75rem;margin-bottom:2rem;}
+  .btn-primary,.btn-outline{padding:.85rem 1.5rem;font-size:.76rem;min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
+  .hero-stats{gap:1.5rem;flex-wrap:wrap;padding-top:1.5rem;}
+  .stat-num{font-size:1.8rem;}
+  .stat-label{font-size:.6rem;}
   .exp-card{grid-template-columns:1fr;gap:0.7rem;padding:1.25rem;}
   .exp-right{text-align:left;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;}
   .exp-right .exp-type{margin-top:0;}
@@ -341,32 +352,44 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .tools-grid{grid-template-columns:1fr;}
   .certs-grid{grid-template-columns:1fr 1fr;}
   .projects-grid{grid-template-columns:1fr;}
+  .highlight-row{gap:0.85rem;}
+  .highlight-title{font-size:.92rem;}
+  .highlight-desc{font-size:.78rem;line-height:1.6;}
+  h2,.section-title{font-size:1.7rem !important;line-height:1.2;}
 }
 @media(max-width:480px){
   .why-grid{grid-template-columns:1fr;}
   .certs-grid{grid-template-columns:1fr;}
-  .nav-links{gap:0.6rem;}
-  .nav-links a{font-size:0.58rem;}
-  .hero-right{height:360px;}
-  .hex-stage{width:290px;height:290px;}
-  .orbit-1{width:156px;height:156px;margin:-78px;}
-  .orbit-2{width:234px;height:234px;margin:-117px;}
-  .orbit-3{width:278px;height:278px;margin:-139px;}
+  .nav-logo{display:none;}
+  nav{justify-content:flex-start;padding:0 .75rem;}
+  .nav-links{gap:.85rem;width:100%;}
+  .nav-links a,.nav-btn{font-size:0.6rem;}
+  .hero{padding:4rem 1rem 2rem;}
+  .hero h1{font-size:2.4rem;}
+  .hero-right{height:340px;margin-top:1rem;}
+  .hex-stage{width:280px;height:280px;}
+  .orbit-1{width:150px;height:150px;margin:-75px;}
+  .orbit-2{width:226px;height:226px;margin:-113px;}
+  .orbit-3{width:268px;height:268px;margin:-134px;}
   .hex-center{width:96px;height:96px;}
-  .skill-node-icon{width:34px;height:34px;font-size:0.9rem;}
-  .skill-node-label{font-size:0.46rem;padding:1px 4px;}
-  /* orbit-1 (radius 78, icon 17) */
-  .n1a{top:calc(50% - 78px - 17px);left:calc(50% - 17px);}
-  .n1b{top:calc(50% - 17px);left:calc(50% + 61px);}
-  .n1c{top:calc(50% + 44px);left:calc(50% - 17px);}
-  .n1d{top:calc(50% - 17px);left:calc(50% - 95px);}
-  /* orbit-2 diagonals (radius 117 → 83 on each axis) */
-  .n2a{top:calc(50% - 83px - 17px);left:calc(50% + 83px - 17px);}
-  .n2b{top:calc(50% + 83px - 17px);left:calc(50% + 83px - 17px);}
-  .n2c{top:calc(50% + 83px - 17px);left:calc(50% - 83px - 17px);}
-  .n2d{top:calc(50% - 83px - 17px);left:calc(50% - 83px - 17px);}
-  .stat-chip{font-size:0.5rem;padding:0.26rem 0.55rem;max-width:48%;}
-  .stat-chip:nth-child(3){max-width:90%;bottom:0;}
+  .skill-node-icon{width:32px;height:32px;font-size:0.85rem;}
+  .skill-node-label{font-size:0.44rem;padding:1px 4px;}
+  /* orbit-1 (radius 75, icon 16) */
+  .n1a{top:calc(50% - 75px - 16px);left:calc(50% - 16px);}
+  .n1b{top:calc(50% - 16px);left:calc(50% + 59px);}
+  .n1c{top:calc(50% + 43px);left:calc(50% - 16px);}
+  .n1d{top:calc(50% - 16px);left:calc(50% - 91px);}
+  /* orbit-2 diagonals (radius 113 → 80 on each axis) */
+  .n2a{top:calc(50% - 80px - 16px);left:calc(50% + 80px - 16px);}
+  .n2b{top:calc(50% + 80px - 16px);left:calc(50% + 80px - 16px);}
+  .n2c{top:calc(50% + 80px - 16px);left:calc(50% - 80px - 16px);}
+  .n2d{top:calc(50% - 80px - 16px);left:calc(50% - 80px - 16px);}
+  .stat-chip{font-size:0.48rem;padding:0.24rem 0.5rem;max-width:48%;}
+  .stat-chip:nth-child(3){max-width:92%;bottom:0;}
+  section,.why-section{padding:2.75rem 1rem;}
+  h2,.section-title{font-size:1.5rem !important;}
+  .highlight-ico{width:34px;height:34px;border-radius:8px;}
+  .highlight-ico svg{width:17px;height:17px;}
 }
 </style>
 </head>
