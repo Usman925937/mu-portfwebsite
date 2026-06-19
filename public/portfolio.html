@@ -342,13 +342,16 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
   .hero-stats{gap:1.5rem;flex-wrap:wrap;padding-top:1.5rem;}
   .stat-num{font-size:1.8rem;}
   .stat-label{font-size:.6rem;}
-  .exp-card{grid-template-columns:1fr;gap:0.7rem;padding:1.25rem;}
-  .exp-right{text-align:left;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;}
+  .exp-card{display:flex;flex-direction:column;gap:0.85rem;padding:1.25rem;}
+  .exp-left,.exp-right{grid-column:auto;width:100%;}
+  .exp-right{order:-1;text-align:left;display:flex;flex-wrap:wrap;align-items:center;gap:0.45rem 0.6rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border-soft);}
   .exp-right .exp-type{margin-top:0;}
-  .exp-role{font-size:0.92rem;}
-  .exp-org{font-size:0.76rem;line-height:1.45;}
-  .exp-bullets li{font-size:0.74rem;line-height:1.55;}
-  .exp-skill{font-size:0.58rem;padding:0.16rem 0.45rem;}
+  .exp-role{font-size:0.95rem;line-height:1.3;}
+  .exp-org{font-size:0.74rem;line-height:1.45;}
+  .exp-bullets{margin-top:0.6rem;gap:0.45rem;}
+  .exp-bullets li{font-size:0.74rem;line-height:1.55;padding-left:0.95rem;}
+  .exp-skills{margin-top:0.8rem;gap:0.3rem;}
+  .exp-skill{font-size:0.56rem;padding:0.16rem 0.45rem;}
   .tools-grid{grid-template-columns:1fr;}
   .certs-grid{grid-template-columns:1fr 1fr;}
   .projects-grid{grid-template-columns:1fr;}
@@ -523,9 +526,9 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Generative AI Specialist</div>
         <div class="exp-org">Surt Works &nbsp;·&nbsp; U.S.-Based Virtual Assistance & Customer Service Agency</div>
         <ul class="exp-bullets">
-          <li>Executed client-facing generative AI projects at a U.S.-based VA &amp; customer service agency.</li>
-          <li>Engineered prompts across ChatGPT, Claude, Grok, Perplexity &amp; Gemini for consistent, high-quality output.</li>
-          <li>Extracted insights from large datasets and streamlined research workflows using Claude &amp; Comet — cutting delivery time.</li>
+          <li>Delivered client-facing generative AI projects for a U.S.-based agency.</li>
+          <li>Engineered prompts across ChatGPT, Claude, Grok, Perplexity &amp; Gemini.</li>
+          <li>Cut research &amp; delivery time using Claude and Comet workflows.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Generative AI</span>
@@ -549,9 +552,9 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Accounting & Finance Intern</div>
         <div class="exp-org">Grip Engineers &nbsp;·&nbsp; ISO 9001-Certified Company</div>
         <ul class="exp-bullets">
-          <li>Finance internship at an ISO 9001-certified engineering firm — direct exposure to corporate finance operations.</li>
-          <li>Supported transaction recording, account management &amp; period-end tasks alongside the finance team.</li>
-          <li>Maintained financial records in Excel and supported management reporting in a live, accountable environment.</li>
+          <li>Hands-on exposure to corporate finance at an ISO 9001-certified firm.</li>
+          <li>Supported transaction recording, account management &amp; period-end tasks.</li>
+          <li>Maintained Excel records and assisted management reporting.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Microsoft Excel</span>
@@ -575,10 +578,10 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Accounting & Finance Intern — Banking Operations</div>
         <div class="exp-org">Askari Bank</div>
         <ul class="exp-bullets">
-          <li>Hands-on exposure to live banking operations — reconciliation, compliance &amp; regulatory workflows.</li>
-          <li>Handled voucher reconciliation and bank card record management with high precision.</li>
-          <li>Learned KYC and C Form procedures inside a regulated financial institution.</li>
-          <li>Built an Excel system consolidating ~30 locker files into one structured record — reducing manual effort.</li>
+          <li>Live exposure to reconciliation, compliance &amp; regulatory workflows.</li>
+          <li>Handled voucher reconciliation and bank card records with precision.</li>
+          <li>Learned KYC and C Form procedures in a regulated institution.</li>
+          <li>Built an Excel system consolidating ~30 locker files into one record.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Banking Operations</span>
@@ -603,8 +606,8 @@ footer{padding:2rem 5rem;border-top:1px solid var(--border-soft);display:flex;ju
         <div class="exp-role">Excel Trainer — Peer Instructor</div>
         <div class="exp-org">Foundation University Islamabad</div>
         <ul class="exp-bullets">
-          <li>Delivered Excel training to BS Accounting &amp; Finance peers — lookups, Pivot Tables, Power Query &amp; financial modeling.</li>
-          <li>Simplified complex concepts into structured lessons, reinforcing mastery through teaching.</li>
+          <li>Trained BS A&amp;F peers in Lookups, Pivot Tables, Power Query &amp; modeling.</li>
+          <li>Simplified complex concepts into structured, easy-to-follow lessons.</li>
         </ul>
         <div class="exp-skills">
           <span class="exp-skill">Advanced Excel</span>
