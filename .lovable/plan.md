@@ -1,69 +1,60 @@
 ## Goal
 
-A hidden `/admin` login page (not linked anywhere on the public site) where you — and only you — can sign in and edit every text section of the portfolio. The public portfolio reads its content from the database and re-renders instantly after you save.
+Replace the raw HTML editor in `/admin-dashboard` with a Hostinger-style **form-based editor**. You type into labelled fields per section, click **Save & publish**, and the live homepage updates — no HTML ever shown.
 
-Think Hostinger / WordPress admin: the public URL stays clean (`/`), and the admin lives at a separate URL (`/admin`) that the world cannot discover from the site itself.
+## How it will work
 
----
+```text
+ Admin Dashboard                       Database                Homepage
+ ┌─────────────────────┐               ┌────────────┐         ┌─────────┐
+ │ Hero    [form]      │  save JSON →  │ site_content│  read  │  /      │
+ │ About   [form]      │               │  id=        │  JSON  │ renders │
+ │ Experience [list]   │               │  portfolio_ │   →    │ template│
+ │ Projects   [list]   │               │  data       │ inject │ + data  │
+ │ Skills    [chips]   │               │  (JSON)    │ values │         │
+ │ Contact   [form]    │               └────────────┘         └─────────┘
+ │ [Save & publish]    │
+ └─────────────────────┘
+```
 
-## What gets built
+- Your portfolio HTML stays as the **design template** — the look never changes.
+- Editable bits inside the template get wrapped with hidden marker comments (`<!--CMS:hero.eyebrow-->…<!--/CMS-->`). They are invisible on the live site.
+- A render function on the server takes your saved data and swaps the values into the template every time the homepage loads.
 
-### 1. Backend (Lovable Cloud)
-- Enable Lovable Cloud (Postgres + Auth).
-- Tables:
-  - `site_content` — single JSON document holding all editable portfolio content (hero, about, why-me cards, experience entries, projects, contact, etc.). One row, `id = 'main'`.
-  - `user_roles` + `app_role` enum + `has_role()` security-definer function (the standard secure pattern — roles never live on the profile).
-- RLS:
-  - `site_content` → public `SELECT` (so the portfolio loads for everyone), `UPDATE` only for users with `admin` role.
-  - `user_roles` → readable by authenticated users, writable only by service role.
-- Seed the first admin: after you sign up once at `/admin`, a one-time server function (callable only when zero admins exist) promotes your account to `admin`. After that the endpoint becomes a no-op — no one else can self-promote.
+## Sections covered by the form editor
 
-### 2. Hidden admin URL
-- New route `src/routes/admin.tsx` → login form (email + password). No link to it from the portfolio anywhere.
-- New route `src/routes/_authenticated/admin-dashboard.tsx` → the editor, protected by the integration-managed auth gate + an additional `admin` role check.
-- After login, non-admins get signed out immediately with a generic error.
-- The portfolio's iframe / homepage has zero references to `/admin`.
+| Tab | Fields |
+|---|---|
+| **Hero** | Eyebrow line · First name · Last name · Subtitle · Description (rich text) · 4 stat cards (number + label) · 3 floating chips · "View My Work" CTA · LinkedIn CTA |
+| **About** | 4 paragraphs (rich text) · 4 highlight rows (title + description) |
+| **Experience** | Add/edit/delete/reorder job cards: role · company · bullets · skill tags · date · type · location |
+| **Projects** | Add/edit/delete/reorder project cards: category · title · description · front tags · "what's inside" text · back tags · GitHub URL · filter category |
+| **Skills + Certifications** | Skill node labels (Excel, SQL, Python, Power BI, Financial Modeling, etc.) · Certification list (title + issuer + image URL) |
+| **Contact** | Intro note · LinkedIn URL · GitHub URL · 4 availability rows (label + text) · Footer copyright |
+| **Advanced** | Raw HTML override (kept as escape hatch — anything pasted here replaces the whole page) |
 
-### 3. Admin editor UI
-A clean, sectioned form (tabs or accordion) covering every editable area:
-- **Hero / Intro** — name, title, tagline, primary CTA text.
-- **About / Why Me** — the three cards (icon, title, body).
-- **Experience** — add/edit/remove/reorder job entries, each with bullets.
-- **Projects** — add/edit/remove/reorder cards: title, category, description, link, filter tag.
-- **Contact / Footer** — email, social links.
+Sections **not** in the form editor because they're pure visual design with no real content to change: orbit animation, "Why Hire Me" grid, Education timeline visuals, Recommendations layout. Their text can still be edited via the Advanced tab if needed.
 
-Each section has Save → writes the updated JSON document → public site updates on next load.
+## Behaviour
 
-### 4. Public portfolio becomes data-driven
-- The current static `public/portfolio.html` is rewritten as a React route that fetches `site_content` once (public read, no auth) and renders the same design with the same CSS — visually identical, just powered by data.
-- All current styling, animations, the orbit graphic, the 01/02/03 numbering, mobile polish, etc. are preserved.
+- **Live preview** on the right side of the dashboard updates as you type (debounced 500ms).
+- **Add / Remove / Move up / Move down** buttons on every list item.
+- **Reset section to default** button per tab.
+- **Save & publish** button writes the JSON to the database; the live homepage picks it up on next visit.
+- First load: if no saved data exists, forms are prefilled with the current portfolio content as defaults.
 
----
+## Technical details (for reference)
 
-## Technical notes
+- Move `public/portfolio.html` → `src/lib/portfolio-template.html` and import it with `?raw` so the server can read it inside the Worker runtime.
+- Add `<!--CMS:key-->…<!--/CMS:key-->` markers around editable text and list containers in the template (no visual change).
+- New `src/lib/portfolio-render.ts`: `PortfolioData` type, defaults matching current content, `render(data): string` that does marker replacement + list rendering with HTML escaping.
+- Update `src/lib/site-content.functions.ts`: add `getPortfolioData` (public read) and `savePortfolioData` (admin write) using the existing `site_content` table with a new row `id='portfolio_data'` storing the JSON in the `html` column. No DB migration needed.
+- Update `src/routes/index.tsx`: call `getPortfolioHtml` which now renders template + saved data and returns HTML for the iframe `srcDoc`.
+- Rewrite `src/routes/_authenticated/admin-dashboard.tsx`: tabbed UI (shadcn `Tabs`) with one form per section, repeater components for Experience/Projects/Certifications/Highlights, live `<iframe>` preview, Save button.
+- Raw HTML override stays available under an **Advanced** tab and, when set, completely bypasses the template.
 
-- Auth: Lovable Cloud email + password. Signup is open at `/admin` only on first run (until the first admin exists); after that, signup is disabled and the page is login-only.
-- Role check uses the `has_role(auth.uid(), 'admin')` SECURITY DEFINER function inside RLS — no recursive policy issues.
-- Editor saves go through a `createServerFn` with `requireSupabaseAuth` middleware that also verifies the admin role server-side before any write (defense in depth, never trust the client).
-- The `/admin` path is not crawlable in any nav, sitemap, or footer. (Note: it's still reachable by anyone who types the URL — that's the same model as Hostinger / WP. True obscurity would need a non-guessable path; tell me if you want that instead.)
-- No edge functions needed; all server logic lives in TanStack `createServerFn`.
+## Out of scope (this turn)
 
----
-
-## Out of scope (ask if you want any)
-- Image uploads / media library (only text content for now).
-- Multi-admin / inviting other editors.
-- Versioning / undo history.
-- Rich-text WYSIWYG (fields are plain text + multi-line textareas; bullets are arrays).
-
----
-
-## Deliverables checklist
-1. Lovable Cloud enabled, tables + RLS + role helpers migrated.
-2. `/admin` login page (hidden, not linked).
-3. Protected admin dashboard with editors for every section.
-4. Public portfolio rewritten as a data-driven route, visually identical to today.
-5. Server functions for read (public) and write (admin-only) with role enforcement.
-6. First-run admin bootstrap so you can claim the single admin account.
-
-Reply "go" to build it, or tell me what to change.
+- Image uploads (cert images stay as URLs you paste; can add storage uploads later).
+- Drag-and-drop reordering (using up/down arrow buttons instead — keeps it simple).
+- Theme/color editing (your design system stays fixed).
