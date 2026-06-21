@@ -28,7 +28,7 @@ function AdminAuthPage() {
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (!cancelled && data.user) {
-        navigate({ to: "/_authenticated/admin-dashboard" as never });
+        navigate({ to: "/admin-dashboard" as never });
       }
     })();
     // Check whether an admin has been claimed yet (controls signup visibility).
@@ -66,7 +66,7 @@ function AdminAuthPage() {
           );
           setMode("signin");
         } else {
-          navigate({ to: "/_authenticated/admin-dashboard" as never });
+          navigate({ to: "/admin-dashboard" as never });
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -74,7 +74,7 @@ function AdminAuthPage() {
           password,
         });
         if (error) throw error;
-        navigate({ to: "/_authenticated/admin-dashboard" as never });
+        navigate({ to: "/admin-dashboard" as never });
       }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
