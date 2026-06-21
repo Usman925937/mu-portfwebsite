@@ -597,7 +597,8 @@ interface RepeaterProps<T> {
   items: T[];
   onChange: (items: T[]) => void;
   newItem: () => T;
-  renderItem: (item: T, update: (patch: T extends object ? Partial<T> : T) => void) => React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  renderItem: (item: T, update: (patch: any) => void) => React.ReactNode;
   itemTitle?: (item: T, i: number) => string;
 }
 
