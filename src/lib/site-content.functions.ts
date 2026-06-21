@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { DEFAULT_DATA, render, type PortfolioData } from "./portfolio-render";
 
 function serverPublicClient() {
   return createClient<Database>(
@@ -18,24 +19,53 @@ function serverPublicClient() {
   );
 }
 
-const ROW_ID = "portfolio";
+const DATA_ROW_ID = "portfolio_data";
+
+function mergeData(saved: Partial<PortfolioData> | null): PortfolioData {
+  if (!saved) return DEFAULT_DATA;
+  return {
+    ...DEFAULT_DATA,
+    ...saved,
+    hero: { ...DEFAULT_DATA.hero, ...(saved.hero ?? {}) },
+    experience: saved.experience ?? DEFAULT_DATA.experience,
+    projects: saved.projects ?? DEFAULT_DATA.projects,
+    footerCopy: saved.footerCopy ?? DEFAULT_DATA.footerCopy,
+    rawHtmlOverride: saved.rawHtmlOverride ?? "",
+  };
+}
+
+async function loadData(): Promise<PortfolioData> {
+  const supabase = serverPublicClient();
+  const { data, error } = await supabase
+    .from("site_content")
+    .select("html")
+    .eq("id", DATA_ROW_ID)
+    .maybeSingle();
+  if (error || !data?.html) return DEFAULT_DATA;
+  try {
+    const parsed = JSON.parse(data.html as string) as Partial<PortfolioData>;
+    return mergeData(parsed);
+  } catch {
+    return DEFAULT_DATA;
+  }
+}
 
 export const getPortfolioHtml = createServerFn({ method: "GET" }).handler(
   async () => {
-    const supabase = serverPublicClient();
-    const { data, error } = await supabase
-      .from("site_content")
-      .select("html, updated_at")
-      .eq("id", ROW_ID)
-      .maybeSingle();
-    if (error) {
-      console.error("getPortfolioHtml error", error);
-      return { html: null as string | null, updatedAt: null as string | null };
+    try {
+      const data = await loadData();
+      return { html: render(data) };
+    } catch (e) {
+      console.error("getPortfolioHtml error", e);
+      return { html: render(DEFAULT_DATA) };
     }
-    return {
-      html: (data?.html as string | undefined) ?? null,
-      updatedAt: (data?.updated_at as string | undefined) ?? null,
-    };
+  },
+);
+
+export const getPortfolioData = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const data = await loadData();
+    return { data, defaults: DEFAULT_DATA };
   },
 );
 
@@ -52,10 +82,7 @@ export const getAdminStatus = createServerFn({ method: "GET" })
         .maybeSingle(),
       supabase.rpc("admin_exists"),
     ]);
-    return {
-      isAdmin: !!roleRow,
-      adminExists: !!anyAdmin,
-    };
+    return { isAdmin: !!roleRow, adminExists: !!anyAdmin };
   });
 
 export const claimFirstAdmin = createServerFn({ method: "POST" })
@@ -66,12 +93,13 @@ export const claimFirstAdmin = createServerFn({ method: "POST" })
     return { promoted: !!data };
   });
 
-export const savePortfolioHtml = createServerFn({ method: "POST" })
+// Save structured portfolio data (JSON).
+export const savePortfolioData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
-        html: z.string().min(1).max(5_000_000),
+        json: z.string().min(2).max(5_000_000),
       })
       .parse(d),
   )
@@ -82,11 +110,16 @@ export const savePortfolioHtml = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden: admin role required");
-
+    // validate JSON
+    try {
+      JSON.parse(data.json);
+    } catch {
+      throw new Error("Invalid JSON payload");
+    }
     const { error } = await supabase
       .from("site_content")
       .upsert(
-        { id: ROW_ID, html: data.html, updated_by: userId },
+        { id: DATA_ROW_ID, html: data.json, updated_by: userId },
         { onConflict: "id" },
       );
     if (error) throw new Error(error.message);
