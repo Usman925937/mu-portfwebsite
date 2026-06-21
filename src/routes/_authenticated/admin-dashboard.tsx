@@ -1,13 +1,26 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   claimFirstAdmin,
   getAdminStatus,
-  getPortfolioHtml,
-  savePortfolioHtml,
+  getPortfolioData,
+  savePortfolioData,
 } from "@/lib/site-content.functions";
+import {
+  DEFAULT_DATA,
+  render,
+  type Experience,
+  type PortfolioData,
+  type Project,
+  type Stat,
+} from "@/lib/portfolio-render";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/admin-dashboard")({
   head: () => ({
@@ -22,51 +35,69 @@ export const Route = createFileRoute("/_authenticated/admin-dashboard")({
 function AdminDashboard() {
   const navigate = useNavigate();
   const fetchStatus = useServerFn(getAdminStatus);
-  const fetchHtml = useServerFn(getPortfolioHtml);
-  const saveHtml = useServerFn(savePortfolioHtml);
+  const fetchData = useServerFn(getPortfolioData);
+  const saveData = useServerFn(savePortfolioData);
   const claim = useServerFn(claimFirstAdmin);
 
   const [status, setStatus] = useState<{
     isAdmin: boolean;
     adminExists: boolean;
   } | null>(null);
-  const [html, setHtml] = useState<string>("");
+  const [data, setData] = useState<PortfolioData>(DEFAULT_DATA);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [previewKey, setPreviewKey] = useState(0);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  async function loadAll() {
+  const loadAll = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const s = await fetchStatus();
       setStatus(s);
-      const r = await fetchHtml();
-      if (r.html) {
-        setHtml(r.html);
-      } else {
-        // Seed from the static fallback so the editor always has something to work with.
-        try {
-          const res = await fetch("/portfolio.html");
-          const text = await res.text();
-          setHtml(text);
-        } catch {
-          setHtml("");
-        }
-      }
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Failed to load");
+      const r = await fetchData();
+      setData(r.data);
+    } catch (e) {
+      setErr((e as Error).message || "Failed to load");
     } finally {
       setLoading(false);
     }
-  }
+  }, [fetchStatus, fetchData]);
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: u }) => {
+      setUserEmail(u.user?.email ?? null);
+    });
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadAll]);
+
+  // Debounced live preview HTML
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        setPreviewHtml(render(data));
+      } catch (e) {
+        console.error("preview render", e);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [data]);
+
+  async function handleSave() {
+    setSaving(true);
+    setMsg(null);
+    setErr(null);
+    try {
+      await saveData({ data: { json: JSON.stringify(data) } });
+      setMsg("Saved and published.");
+    } catch (e) {
+      setErr((e as Error).message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleClaim() {
     setErr(null);
@@ -77,262 +108,570 @@ function AdminDashboard() {
         setMsg("You are now the admin.");
         await loadAll();
       } else {
-        setErr("Admin already exists.");
-        await loadAll();
+        setErr("Admin already claimed by another account.");
       }
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Failed to claim");
-    }
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setErr(null);
-    setMsg(null);
-    try {
-      await saveHtml({ data: { html } });
-      setMsg("Saved. The public site is updated.");
-      setPreviewKey((k) => k + 1);
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
+    } catch (e) {
+      setErr((e as Error).message || "Claim failed");
     }
   }
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    navigate({ to: "/admin" });
+    navigate({ to: "/admin", replace: true });
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-[#c9a84c]">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!status?.isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-white p-6">
+        <div className="max-w-md text-center space-y-4">
+          <h1 className="text-2xl font-semibold text-[#c9a84c]">
+            Admin access required
+          </h1>
+          {status?.adminExists ? (
+            <p className="text-sm opacity-70">
+              An admin is already configured. You don't have admin permission.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm opacity-80">
+                No admin exists yet. Click below to claim the admin role for
+                this account.
+              </p>
+              <Button onClick={handleClaim}>Make me the admin</Button>
+            </>
+          )}
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign out
+          </Button>
+          {err && <p className="text-red-400 text-sm">{err}</p>}
+          {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#08121f",
-        color: "#ccd6f6",
-        fontFamily: "Inter, system-ui, sans-serif",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1rem 1.5rem",
-          borderBottom: "1px solid rgba(201,168,76,.15)",
-          background: "#0f1e33",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: "Playfair Display, serif",
-              color: "#c9a84c",
-              fontSize: "1.05rem",
-            }}
-          >
-            Portfolio Admin
-          </div>
-          <div
-            style={{
-              fontSize: ".66rem",
-              color: "#6b7a99",
-              letterSpacing: ".18em",
-              textTransform: "uppercase",
-              marginTop: 2,
-            }}
-          >
-            Edit anything. Save. It's live.
-          </div>
+    <div className="min-h-screen bg-[#0a0f1c] text-white flex flex-col">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <span className="text-[#c9a84c] font-semibold">Portfolio Admin</span>
+          <span className="text-xs opacity-60">{userEmail}</span>
         </div>
-        <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-          <a href="/" target="_blank" rel="noreferrer" style={linkBtnStyle}>
-            View site
-          </a>
-          <button onClick={handleSignOut} style={ghostBtnStyle}>
+        <div className="flex gap-2 items-center">
+          {msg && <span className="text-emerald-400 text-xs">{msg}</span>}
+          {err && <span className="text-red-400 text-xs">{err}</span>}
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving…" : "Save & publish"}
+          </Button>
+          <Button variant="outline" onClick={() => loadAll()}>
+            Reload
+          </Button>
+          <Button variant="ghost" onClick={handleSignOut}>
             Sign out
-          </button>
+          </Button>
         </div>
       </header>
 
-      {loading ? (
-        <div style={{ padding: "2rem" }}>Loading…</div>
-      ) : status && !status.isAdmin ? (
-        <div style={{ padding: "2rem", maxWidth: 560 }}>
-          {!status.adminExists ? (
-            <>
-              <h2 style={{ marginBottom: ".5rem" }}>Claim admin access</h2>
-              <p style={{ color: "#6b7a99", marginBottom: "1rem" }}>
-                No admin has been set up yet. Click below to make this account
-                the site owner. After that, no one else can claim it.
-              </p>
-              <button onClick={handleClaim} style={primaryBtnStyle}>
-                Make me the admin
-              </button>
-            </>
-          ) : (
-            <>
-              <h2 style={{ marginBottom: ".5rem" }}>Not authorized</h2>
-              <p style={{ color: "#6b7a99" }}>
-                This account doesn't have admin access. Sign out and use the
-                owner account.
-              </p>
-            </>
-          )}
-          {err && <div style={errStyle}>{err}</div>}
-          {msg && <div style={msgStyle}>{msg}</div>}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
+        <div className="overflow-y-auto p-6 border-r border-white/10">
+          <Editor data={data} setData={setData} />
         </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-            gap: 0,
-            height: "calc(100vh - 73px)",
-          }}
-        >
-          <section
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              borderRight: "1px solid rgba(201,168,76,.15)",
-              minWidth: 0,
-            }}
-          >
-            <div style={toolbarStyle}>
-              <span style={pillStyle}>portfolio.html</span>
-              <div style={{ display: "flex", gap: ".5rem" }}>
-                <button
-                  onClick={loadAll}
-                  disabled={saving}
-                  style={ghostBtnStyle}
-                >
-                  Reload
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={primaryBtnStyle}
-                >
-                  {saving ? "Saving…" : "Save & publish"}
-                </button>
-              </div>
-            </div>
-            {(err || msg) && (
-              <div style={{ padding: "0 1rem" }}>
-                {err && <div style={errStyle}>{err}</div>}
-                {msg && <div style={msgStyle}>{msg}</div>}
-              </div>
-            )}
-            <textarea
-              spellCheck={false}
-              value={html}
-              onChange={(e) => setHtml(e.target.value)}
-              style={{
-                flex: 1,
-                width: "100%",
-                background: "#08121f",
-                color: "#e8edf7",
-                border: "none",
-                outline: "none",
-                padding: "1rem",
-                fontFamily:
-                  "ui-monospace, SFMono-Regular, Menlo, monospace",
-                fontSize: 12.5,
-                lineHeight: 1.5,
-                resize: "none",
-              }}
-            />
-          </section>
-
-          <section
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              background: "#020611",
-            }}
-          >
-            <div style={toolbarStyle}>
-              <span style={pillStyle}>Live preview</span>
-              <button
-                onClick={() => setPreviewKey((k) => k + 1)}
-                style={ghostBtnStyle}
-              >
-                Refresh
-              </button>
-            </div>
-            <iframe
-              key={previewKey}
-              title="preview"
-              srcDoc={html}
-              style={{ flex: 1, width: "100%", border: 0, background: "#fff" }}
-            />
-          </section>
+        <div className="bg-[#08121f]">
+          <iframe
+            title="Live preview"
+            srcDoc={previewHtml}
+            className="w-full h-full"
+            style={{ minHeight: "calc(100vh - 56px)" }}
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-const primaryBtnStyle: React.CSSProperties = {
-  background: "#c9a84c",
-  color: "#08121f",
-  border: "none",
-  borderRadius: 6,
-  padding: ".55rem 1rem",
-  fontWeight: 700,
-  fontSize: ".75rem",
-  letterSpacing: ".08em",
-  textTransform: "uppercase",
-  cursor: "pointer",
-};
-const ghostBtnStyle: React.CSSProperties = {
-  background: "transparent",
-  color: "#ccd6f6",
-  border: "1px solid rgba(201,168,76,.3)",
-  borderRadius: 6,
-  padding: ".5rem .9rem",
-  fontSize: ".72rem",
-  letterSpacing: ".08em",
-  textTransform: "uppercase",
-  cursor: "pointer",
-};
-const linkBtnStyle: React.CSSProperties = {
-  ...ghostBtnStyle,
-  textDecoration: "none",
-  display: "inline-block",
-};
-const toolbarStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: ".75rem 1rem",
-  borderBottom: "1px solid rgba(201,168,76,.15)",
-  background: "#0f1e33",
-};
-const pillStyle: React.CSSProperties = {
-  fontSize: ".66rem",
-  letterSpacing: ".18em",
-  textTransform: "uppercase",
-  color: "#6b7a99",
-};
-const errStyle: React.CSSProperties = {
-  background: "rgba(220,60,60,.12)",
-  border: "1px solid rgba(220,60,60,.35)",
-  color: "#ff8b8b",
-  padding: ".5rem .65rem",
-  borderRadius: 6,
-  fontSize: ".78rem",
-  margin: ".5rem 0",
-};
-const msgStyle: React.CSSProperties = {
-  background: "rgba(201,168,76,.1)",
-  border: "1px solid rgba(201,168,76,.3)",
-  color: "#e8c97a",
-  padding: ".5rem .65rem",
-  borderRadius: 6,
-  fontSize: ".78rem",
-  margin: ".5rem 0",
-};
+// ============ Editor ============
+
+type SetData = React.Dispatch<React.SetStateAction<PortfolioData>>;
+
+function Editor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  return (
+    <Tabs defaultValue="hero" className="w-full">
+      <TabsList className="grid grid-cols-5 mb-4">
+        <TabsTrigger value="hero">Hero</TabsTrigger>
+        <TabsTrigger value="experience">Experience</TabsTrigger>
+        <TabsTrigger value="projects">Projects</TabsTrigger>
+        <TabsTrigger value="contact">Contact</TabsTrigger>
+        <TabsTrigger value="advanced">Advanced</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="hero">
+        <HeroEditor data={data} setData={setData} />
+      </TabsContent>
+      <TabsContent value="experience">
+        <ExperienceEditor data={data} setData={setData} />
+      </TabsContent>
+      <TabsContent value="projects">
+        <ProjectsEditor data={data} setData={setData} />
+      </TabsContent>
+      <TabsContent value="contact">
+        <ContactEditor data={data} setData={setData} />
+      </TabsContent>
+      <TabsContent value="advanced">
+        <AdvancedEditor data={data} setData={setData} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function Section({
+  title,
+  description,
+  children,
+  onReset,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  onReset?: () => void;
+}) {
+  return (
+    <div className="space-y-3 mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-[#c9a84c]">{title}</h2>
+          {description && (
+            <p className="text-xs opacity-60">{description}</p>
+          )}
+        </div>
+        {onReset && (
+          <Button size="sm" variant="ghost" onClick={onReset}>
+            Reset to default
+          </Button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs uppercase tracking-wider opacity-80">
+        {label}
+      </Label>
+      {children}
+      {hint && <p className="text-[10px] opacity-50">{hint}</p>}
+    </div>
+  );
+}
+
+function HeroEditor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  const h = data.hero;
+  const set = (patch: Partial<PortfolioData["hero"]>) =>
+    setData((d) => ({ ...d, hero: { ...d.hero, ...patch } }));
+
+  return (
+    <Section
+      title="Hero"
+      description="The big intro at the top of the page."
+      onReset={() => set(DEFAULT_DATA.hero)}
+    >
+      <Field label="Eyebrow line">
+        <Input
+          value={h.eyebrow}
+          onChange={(e) => set({ eyebrow: e.target.value })}
+        />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="First name">
+          <Input
+            value={h.firstName}
+            onChange={(e) => set({ firstName: e.target.value })}
+          />
+        </Field>
+        <Field label="Last name (shown in gold)" hint="Include the period if you want one.">
+          <Input
+            value={h.lastName}
+            onChange={(e) => set({ lastName: e.target.value })}
+          />
+        </Field>
+      </div>
+      <Field label="Subtitle">
+        <Input
+          value={h.subtitle}
+          onChange={(e) => set({ subtitle: e.target.value })}
+        />
+      </Field>
+      <Field label="Description" hint="HTML allowed: wrap key phrases in <strong>…</strong>.">
+        <Textarea
+          rows={4}
+          value={h.description}
+          onChange={(e) => set({ description: e.target.value })}
+        />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Primary button text">
+          <Input
+            value={h.primaryCtaText}
+            onChange={(e) => set({ primaryCtaText: e.target.value })}
+          />
+        </Field>
+        <Field label="Primary button link" hint="Use #experience to scroll within page.">
+          <Input
+            value={h.primaryCtaHref}
+            onChange={(e) => set({ primaryCtaHref: e.target.value })}
+          />
+        </Field>
+        <Field label="Secondary button text">
+          <Input
+            value={h.secondaryCtaText}
+            onChange={(e) => set({ secondaryCtaText: e.target.value })}
+          />
+        </Field>
+        <Field label="Secondary button link">
+          <Input
+            value={h.secondaryCtaHref}
+            onChange={(e) => set({ secondaryCtaHref: e.target.value })}
+          />
+        </Field>
+      </div>
+
+      <Repeater<Stat>
+        label="Stats (small cards under the description)"
+        items={h.stats}
+        onChange={(stats) => set({ stats })}
+        newItem={() => ({ num: "", label: "" })}
+        renderItem={(s, update) => (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Number">
+              <Input value={s.num} onChange={(e) => update({ num: e.target.value })} />
+            </Field>
+            <Field label="Label">
+              <Input value={s.label} onChange={(e) => update({ label: e.target.value })} />
+            </Field>
+          </div>
+        )}
+      />
+
+      <Repeater<string>
+        label="Floating chips (top of orbit area)"
+        items={h.chips}
+        onChange={(chips) => set({ chips })}
+        newItem={() => ""}
+        renderItem={(c, update) => (
+          <Input value={c} onChange={(e) => update(e.target.value)} />
+        )}
+      />
+    </Section>
+  );
+}
+
+function ExperienceEditor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  return (
+    <Section
+      title="Experience"
+      description="Job cards in the Experience section."
+      onReset={() => setData((d) => ({ ...d, experience: DEFAULT_DATA.experience }))}
+    >
+      <Repeater<Experience>
+        label="Job entries"
+        items={data.experience}
+        onChange={(experience) => setData((d) => ({ ...d, experience }))}
+        newItem={() => ({
+          role: "",
+          org: "",
+          bullets: [""],
+          skills: [],
+          date: "",
+          type: "",
+          location: "",
+        })}
+        renderItem={(e, update) => (
+          <div className="space-y-2">
+            <Field label="Role / Title">
+              <Input value={e.role} onChange={(ev) => update({ role: ev.target.value })} />
+            </Field>
+            <Field label="Company / Org">
+              <Input value={e.org} onChange={(ev) => update({ org: ev.target.value })} />
+            </Field>
+            <Field label="Bullet points (one per line)">
+              <Textarea
+                rows={4}
+                value={e.bullets.join("\n")}
+                onChange={(ev) =>
+                  update({
+                    bullets: ev.target.value.split("\n").filter((s) => s.length > 0),
+                  })
+                }
+              />
+            </Field>
+            <Field label="Skill tags (comma separated)">
+              <Input
+                value={e.skills.join(", ")}
+                onChange={(ev) =>
+                  update({
+                    skills: ev.target.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
+            </Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Date range">
+                <Input value={e.date} onChange={(ev) => update({ date: ev.target.value })} />
+              </Field>
+              <Field label="Type">
+                <Input value={e.type} onChange={(ev) => update({ type: ev.target.value })} />
+              </Field>
+              <Field label="Location">
+                <Input value={e.location} onChange={(ev) => update({ location: ev.target.value })} />
+              </Field>
+            </div>
+          </div>
+        )}
+        itemTitle={(e, i) => `${i + 1}. ${e.role || "Untitled role"}`}
+      />
+    </Section>
+  );
+}
+
+function ProjectsEditor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  return (
+    <Section
+      title="Projects"
+      description="Project cards in the Projects section."
+      onReset={() => setData((d) => ({ ...d, projects: DEFAULT_DATA.projects }))}
+    >
+      <Repeater<Project>
+        label="Project cards"
+        items={data.projects}
+        onChange={(projects) => setData((d) => ({ ...d, projects }))}
+        newItem={() => ({
+          type: "",
+          category: "excel",
+          name: "",
+          desc: "",
+          pillsFront: [],
+          insideText: "",
+          pillsBack: [],
+          githubUrl: "",
+        })}
+        renderItem={(p, update) => (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Category label">
+                <Input value={p.type} onChange={(e) => update({ type: e.target.value })} />
+              </Field>
+              <Field
+                label="Filter tags"
+                hint="Space-separated. Used by the filter buttons: excel, sql, python, finance, powerbi"
+              >
+                <Input value={p.category} onChange={(e) => update({ category: e.target.value })} />
+              </Field>
+            </div>
+            <Field label="Project name">
+              <Input value={p.name} onChange={(e) => update({ name: e.target.value })} />
+            </Field>
+            <Field label="Short description (front of card)">
+              <Textarea rows={2} value={p.desc} onChange={(e) => update({ desc: e.target.value })} />
+            </Field>
+            <Field label="Front pills (comma separated)">
+              <Input
+                value={p.pillsFront.join(", ")}
+                onChange={(e) =>
+                  update({
+                    pillsFront: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+              />
+            </Field>
+            <Field label="What's Inside (back of card)">
+              <Textarea
+                rows={3}
+                value={p.insideText}
+                onChange={(e) => update({ insideText: e.target.value })}
+              />
+            </Field>
+            <Field label="Back pills (comma separated)">
+              <Input
+                value={p.pillsBack.join(", ")}
+                onChange={(e) =>
+                  update({
+                    pillsBack: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+              />
+            </Field>
+            <Field label="GitHub URL">
+              <Input value={p.githubUrl} onChange={(e) => update({ githubUrl: e.target.value })} />
+            </Field>
+          </div>
+        )}
+        itemTitle={(p, i) => `${i + 1}. ${p.name || "Untitled project"}`}
+      />
+    </Section>
+  );
+}
+
+function ContactEditor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  return (
+    <Section
+      title="Contact / Footer"
+      description="Footer copyright line and the LinkedIn link used in the hero."
+      onReset={() =>
+        setData((d) => ({
+          ...d,
+          footerCopy: DEFAULT_DATA.footerCopy,
+          hero: { ...d.hero, secondaryCtaHref: DEFAULT_DATA.hero.secondaryCtaHref },
+        }))
+      }
+    >
+      <Field label="LinkedIn URL (also used by the Hero LinkedIn button)">
+        <Input
+          value={data.hero.secondaryCtaHref}
+          onChange={(e) =>
+            setData((d) => ({
+              ...d,
+              hero: { ...d.hero, secondaryCtaHref: e.target.value },
+            }))
+          }
+        />
+      </Field>
+      <Field label="Footer copyright (HTML allowed)">
+        <Textarea
+          rows={2}
+          value={data.footerCopy}
+          onChange={(e) => setData((d) => ({ ...d, footerCopy: e.target.value }))}
+        />
+      </Field>
+      <p className="text-xs opacity-60">
+        For deeper changes to the Contact section design (GitHub links, availability rows, etc.),
+        use the <strong>Advanced</strong> tab to paste an HTML override.
+      </p>
+    </Section>
+  );
+}
+
+function AdvancedEditor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+  return (
+    <Section
+      title="Advanced: Raw HTML override"
+      description="When set, this completely replaces the live homepage. Leave blank to use the form-based editor above."
+      onReset={() => setData((d) => ({ ...d, rawHtmlOverride: "" }))}
+    >
+      <Textarea
+        rows={20}
+        spellCheck={false}
+        className="font-mono text-xs"
+        value={data.rawHtmlOverride ?? ""}
+        onChange={(e) => setData((d) => ({ ...d, rawHtmlOverride: e.target.value }))}
+        placeholder="<!DOCTYPE html>…"
+      />
+    </Section>
+  );
+}
+
+// ============ Repeater ============
+
+interface RepeaterProps<T> {
+  label: string;
+  items: T[];
+  onChange: (items: T[]) => void;
+  newItem: () => T;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  renderItem: (item: T, update: (patch: any) => void) => React.ReactNode;
+  itemTitle?: (item: T, i: number) => string;
+}
+
+function Repeater<T>({
+  label,
+  items,
+  onChange,
+  newItem,
+  renderItem,
+  itemTitle,
+}: RepeaterProps<T>) {
+  const update = (i: number, value: T) => {
+    const next = items.slice();
+    next[i] = value;
+    onChange(next);
+  };
+  const remove = (i: number) => {
+    const next = items.slice();
+    next.splice(i, 1);
+    onChange(next);
+  };
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    const next = items.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  const add = () => onChange([...items, newItem()]);
+
+  return (
+    <div className="space-y-2 mt-4">
+      <Label className="text-xs uppercase tracking-wider opacity-80">{label}</Label>
+      <div className="space-y-3">
+        {items.map((it, i) => (
+          <div
+            key={i}
+            className="border border-white/10 rounded-md p-3 bg-white/[0.02]"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs opacity-70">
+                {itemTitle ? itemTitle(it, i) : `Item ${i + 1}`}
+              </span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>
+                  ↑
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => move(i, 1)}
+                  disabled={i === items.length - 1}
+                >
+                  ↓
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => remove(i)}>
+                  ✕
+                </Button>
+              </div>
+            </div>
+            {renderItem(it, (patch) => {
+              if (typeof it === "object" && it !== null) {
+                update(i, { ...(it as object), ...(patch as object) } as T);
+              } else {
+                update(i, patch as T);
+              }
+            })}
+          </div>
+        ))}
+      </div>
+      <Button size="sm" variant="outline" onClick={add}>
+        + Add
+      </Button>
+    </div>
+  );
+}

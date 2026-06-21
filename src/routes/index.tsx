@@ -40,13 +40,9 @@ function PortfolioPage() {
     };
   }, [fetchHtml]);
 
-  const iframeProps: React.IframeHTMLAttributes<HTMLIFrameElement> = html
-    ? { srcDoc: html }
-    : { src: "/portfolio.html" };
-
   return (
     <iframe
-      {...iframeProps}
+      srcDoc={html ?? ""}
       title="Portfolio"
       style={{
         position: "fixed",
