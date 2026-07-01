@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_DATA, render, type PortfolioData } from "./portfolio-render";
+import { requireFreshTotp } from "./admin-auth.functions";
 
 function serverPublicClient() {
   return createClient<Database>(
