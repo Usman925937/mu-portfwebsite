@@ -1,13 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import {
   claimFirstAdmin,
-  getAdminStatus,
   getPortfolioData,
   savePortfolioData,
 } from "@/lib/site-content.functions";
+import {
+  approveUser,
+  clearTotpSession,
+  confirmTotpEnrollment,
+  disableTotp,
+  getAdminSecurityState,
+  listPendingUsers,
+  rejectUser,
+  startTotpEnrollment,
+  verifyTotp,
+} from "@/lib/admin-auth.functions";
 import {
   DEFAULT_DATA,
   render,
@@ -32,71 +43,43 @@ export const Route = createFileRoute("/_authenticated/admin-dashboard")({
   component: AdminDashboard,
 });
 
+type SecurityState = Awaited<ReturnType<typeof getAdminSecurityState>>;
+
 function AdminDashboard() {
   const navigate = useNavigate();
-  const fetchStatus = useServerFn(getAdminStatus);
-  const fetchData = useServerFn(getPortfolioData);
-  const saveData = useServerFn(savePortfolioData);
+  const fetchState = useServerFn(getAdminSecurityState);
   const claim = useServerFn(claimFirstAdmin);
+  const clearSession = useServerFn(clearTotpSession);
 
-  const [status, setStatus] = useState<{
-    isAdmin: boolean;
-    adminExists: boolean;
-  } | null>(null);
-  const [data, setData] = useState<PortfolioData>(DEFAULT_DATA);
+  const [state, setState] = useState<SecurityState | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const loadAll = useCallback(async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
-      const s = await fetchStatus();
-      setStatus(s);
-      const r = await fetchData();
-      setData(r.data);
+      setState(await fetchState());
     } catch (e) {
-      setErr((e as Error).message || "Failed to load");
+      setErr((e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [fetchStatus, fetchData]);
+  }, [fetchState]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: u }) => {
       setUserEmail(u.user?.email ?? null);
     });
-    loadAll();
-  }, [loadAll]);
+    reload();
+  }, [reload]);
 
-  // Debounced live preview HTML
-  const [previewHtml, setPreviewHtml] = useState<string>("");
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        setPreviewHtml(render(data));
-      } catch (e) {
-        console.error("preview render", e);
-      }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [data]);
-
-  async function handleSave() {
-    setSaving(true);
-    setMsg(null);
-    setErr(null);
-    try {
-      await saveData({ data: { json: JSON.stringify(data) } });
-      setMsg("Saved and published.");
-    } catch (e) {
-      setErr((e as Error).message || "Save failed");
-    } finally {
-      setSaving(false);
-    }
+  async function handleSignOut() {
+    await clearSession().catch(() => {});
+    await supabase.auth.signOut();
+    navigate({ to: "/admin", replace: true });
   }
 
   async function handleClaim() {
@@ -106,64 +89,300 @@ function AdminDashboard() {
       const r = await claim();
       if (r.promoted) {
         setMsg("You are now the admin.");
-        await loadAll();
+        await reload();
       } else {
         setErr("Admin already claimed by another account.");
       }
     } catch (e) {
-      setErr((e as Error).message || "Claim failed");
+      setErr((e as Error).message);
     }
   }
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/admin", replace: true });
-  }
+  if (loading) return <FullScreenMessage>Loading…</FullScreenMessage>;
 
-  if (loading) {
+  if (!state?.isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-[#c9a84c]">
-        Loading…
-      </div>
-    );
-  }
-
-  if (!status?.isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-white p-6">
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-semibold text-[#c9a84c]">
-            Admin access required
-          </h1>
-          {status?.adminExists ? (
-            <p className="text-sm opacity-70">
-              An admin is already configured. You don't have admin permission.
+      <FullScreenPanel title="Admin access" email={userEmail} onSignOut={handleSignOut}>
+        {state?.adminExists ? (
+          <>
+            <p className="text-sm opacity-80">
+              Your account is <strong>pending approval</strong>. An existing admin
+              needs to approve you before you can access the editor.
             </p>
-          ) : (
-            <>
-              <p className="text-sm opacity-80">
-                No admin exists yet. Click below to claim the admin role for
-                this account.
-              </p>
-              <Button onClick={handleClaim}>Make me the admin</Button>
-            </>
-          )}
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign out
-          </Button>
-          {err && <p className="text-red-400 text-sm">{err}</p>}
-          {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
+            <Button variant="outline" onClick={reload}>Check again</Button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm opacity-80">
+              No admin exists yet. Claim the admin role for this account to begin.
+            </p>
+            <Button onClick={handleClaim}>Make me the admin</Button>
+          </>
+        )}
+        {err && <p className="text-red-400 text-sm">{err}</p>}
+        {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
+      </FullScreenPanel>
+    );
+  }
+
+  if (!state.totpEnabled) {
+    return (
+      <FullScreenPanel title="Set up two-factor authentication" email={userEmail} onSignOut={handleSignOut}>
+        <TotpEnrollment onDone={reload} />
+      </FullScreenPanel>
+    );
+  }
+
+  if (!state.twoFactorSessionActive) {
+    return (
+      <FullScreenPanel title="Enter verification code" email={userEmail} onSignOut={handleSignOut}>
+        <TotpChallenge onDone={reload} lockedUntil={state.lockedUntil} />
+      </FullScreenPanel>
+    );
+  }
+
+  return <DashboardMain onSignOut={handleSignOut} userEmail={userEmail} onReloadState={reload} />;
+}
+
+function FullScreenMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-[#c9a84c]">
+      {children}
+    </div>
+  );
+}
+
+function FullScreenPanel({
+  title, email, onSignOut, children,
+}: { title: string; email: string | null; onSignOut: () => void; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0a0f1c] text-white p-6">
+      <div className="w-full max-w-md bg-[#0f1e33] border border-[#c9a84c]/20 rounded-xl p-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-[#c9a84c]">{title}</h1>
+            {email && <p className="text-xs opacity-60 mt-1">{email}</p>}
+          </div>
+          <Button size="sm" variant="ghost" onClick={onSignOut}>Sign out</Button>
         </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TotpEnrollment({ onDone }: { onDone: () => void }) {
+  const start = useServerFn(startTotpEnrollment);
+  const confirm = useServerFn(confirmTotpEnrollment);
+  const [phase, setPhase] = useState<"idle" | "show" | "done">("idle");
+  const [secret, setSecret] = useState("");
+  const [qr, setQr] = useState("");
+  const [backup, setBackup] = useState<string[]>([]);
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function begin() {
+    setErr(null); setBusy(true);
+    try {
+      const r = await start();
+      setSecret(r.secret); setBackup(r.backupCodes);
+      setQr(await QRCode.toDataURL(r.otpauthUri, { margin: 1, width: 220 }));
+      setPhase("show");
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setErr(null); setBusy(true);
+    try {
+      await confirm({ data: { code } });
+      setPhase("done");
+      setTimeout(onDone, 1000);
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  }
+
+  if (phase === "idle") {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm opacity-80">
+          Install an authenticator app (Google Authenticator, Authy, 1Password) on
+          your phone, then click below to reveal a QR code.
+        </p>
+        <Button onClick={begin} disabled={busy}>
+          {busy ? "Preparing…" : "Reveal QR code"}
+        </Button>
+        {err && <p className="text-red-400 text-sm">{err}</p>}
       </div>
     );
+  }
+
+  if (phase === "done") {
+    return <p className="text-emerald-400 text-sm">2FA enabled. Loading dashboard…</p>;
   }
 
   return (
+    <form onSubmit={submit} className="space-y-4">
+      <div className="flex flex-col items-center gap-2 p-3 bg-white rounded-md">
+        {qr && <img src={qr} alt="Scan QR" className="w-[220px] h-[220px]" />}
+      </div>
+      <div className="text-xs opacity-70">
+        Can't scan? Enter this secret manually:
+        <code className="block mt-1 p-2 bg-black/40 rounded text-[#c9a84c] break-all">
+          {secret}
+        </code>
+      </div>
+      <div className="text-xs">
+        <div className="uppercase tracking-wider opacity-60 mb-1">
+          Backup codes (save these somewhere safe — shown only once)
+        </div>
+        <div className="grid grid-cols-2 gap-1 p-2 bg-black/40 rounded font-mono text-[11px]">
+          {backup.map((c) => (<span key={c}>{c}</span>))}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs uppercase tracking-wider opacity-80">
+          Enter the 6-digit code from your app
+        </Label>
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          inputMode="numeric" pattern="[0-9]*" autoFocus placeholder="123456"
+        />
+      </div>
+      {err && <p className="text-red-400 text-sm">{err}</p>}
+      <Button type="submit" disabled={busy || code.length < 6}>
+        {busy ? "Verifying…" : "Confirm and enable 2FA"}
+      </Button>
+    </form>
+  );
+}
+
+function TotpChallenge({
+  onDone, lockedUntil,
+}: { onDone: () => void; lockedUntil: string | null }) {
+  const verify = useServerFn(verifyTotp);
+  const [code, setCode] = useState("");
+  const [useBackup, setUseBackup] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const locked = lockedUntil && new Date(lockedUntil).getTime() > Date.now();
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setErr(null); setBusy(true);
+    try {
+      await verify({ data: { code, useBackup } });
+      onDone();
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <p className="text-sm opacity-80">
+        {useBackup
+          ? "Enter one of your saved backup codes."
+          : "Open your authenticator app and enter the 6-digit code."}
+      </p>
+      {locked && (
+        <p className="text-red-400 text-sm">
+          Locked until {new Date(lockedUntil!).toLocaleTimeString()}.
+        </p>
+      )}
+      <Input
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        inputMode={useBackup ? "text" : "numeric"}
+        pattern={useBackup ? undefined : "[0-9]*"}
+        autoFocus
+        placeholder={useBackup ? "BACKUP-CODE" : "123456"}
+        disabled={!!locked}
+      />
+      {err && <p className="text-red-400 text-sm">{err}</p>}
+      <div className="flex justify-between items-center gap-2">
+        <button
+          type="button"
+          className="text-xs opacity-70 hover:opacity-100 underline"
+          onClick={() => { setUseBackup((v) => !v); setCode(""); }}
+        >
+          {useBackup ? "Use authenticator app" : "Use a backup code instead"}
+        </button>
+        <Button type="submit" disabled={busy || !!locked || code.length < 6}>
+          {busy ? "Verifying…" : "Verify"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function DashboardMain({
+  userEmail, onSignOut, onReloadState,
+}: { userEmail: string | null; onSignOut: () => void; onReloadState: () => void }) {
+  const fetchData = useServerFn(getPortfolioData);
+  const saveData = useServerFn(savePortfolioData);
+  const verify = useServerFn(verifyTotp);
+
+  const [data, setData] = useState<PortfolioData>(DEFAULT_DATA);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [reauth, setReauth] = useState<null | { after: () => Promise<void> }>(null);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetchData();
+      setData(r.data);
+    } catch (e) { setErr((e as Error).message); } finally { setLoading(false); }
+  }, [fetchData]);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { setPreviewHtml(render(data)); } catch (e) { console.error(e); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [data]);
+
+  async function doSave() {
+    await saveData({ data: { json: JSON.stringify(data) } });
+    setMsg("Saved and published.");
+  }
+
+  async function handleSave() {
+    setSaving(true); setMsg(null); setErr(null);
+    try { await doSave(); }
+    catch (e) {
+      const m = (e as Error).message;
+      if (m.includes("REAUTH_REQUIRED")) {
+        setReauth({ after: doSave });
+      } else { setErr(m); }
+    } finally { setSaving(false); }
+  }
+
+  async function handleReauthVerify(code: string) {
+    await verify({ data: { code } });
+    const cb = reauth?.after;
+    setReauth(null);
+    if (cb) {
+      setSaving(true);
+      try { await cb(); } catch (e) { setErr((e as Error).message); }
+      finally { setSaving(false); }
+    }
+  }
+
+  if (loading) return <FullScreenMessage>Loading…</FullScreenMessage>;
+
+  return (
     <div className="min-h-screen bg-[#0a0f1c] text-white flex flex-col">
-      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10">
+      <header className="flex items-center justify-between px-6 py-3 border-b border-white/10 flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <span className="text-[#c9a84c] font-semibold">Portfolio Admin</span>
           <span className="text-xs opacity-60">{userEmail}</span>
+          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">
+            2FA active
+          </span>
         </div>
         <div className="flex gap-2 items-center">
           {msg && <span className="text-emerald-400 text-xs">{msg}</span>}
@@ -171,28 +390,64 @@ function AdminDashboard() {
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Saving…" : "Save & publish"}
           </Button>
-          <Button variant="outline" onClick={() => loadAll()}>
-            Reload
-          </Button>
-          <Button variant="ghost" onClick={handleSignOut}>
-            Sign out
-          </Button>
+          <Button variant="outline" onClick={() => loadAll()}>Reload</Button>
+          <Button variant="ghost" onClick={onSignOut}>Sign out</Button>
         </div>
       </header>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
         <div className="overflow-y-auto p-6 border-r border-white/10">
-          <Editor data={data} setData={setData} />
+          <Editor data={data} setData={setData} onSecurityChange={onReloadState} />
         </div>
         <div className="bg-[#08121f]">
           <iframe
-            title="Live preview"
-            srcDoc={previewHtml}
-            className="w-full h-full"
-            style={{ minHeight: "calc(100vh - 56px)" }}
+            title="Live preview" srcDoc={previewHtml}
+            className="w-full h-full" style={{ minHeight: "calc(100vh - 56px)" }}
           />
         </div>
       </div>
+
+      {reauth && (
+        <ReauthModal onCancel={() => setReauth(null)} onSubmit={handleReauthVerify} />
+      )}
+    </div>
+  );
+}
+
+function ReauthModal({
+  onCancel, onSubmit,
+}: { onCancel: () => void; onSubmit: (code: string) => Promise<void> }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setErr(null);
+    try { await onSubmit(code); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+      <form onSubmit={submit} className="w-full max-w-sm bg-[#0f1e33] border border-[#c9a84c]/20 rounded-xl p-5 space-y-3">
+        <h2 className="text-[#c9a84c] font-semibold">Confirm with 2FA</h2>
+        <p className="text-xs opacity-70">
+          Enter a fresh 6-digit code from your authenticator app to publish changes.
+        </p>
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          inputMode="numeric" pattern="[0-9]*" autoFocus placeholder="123456"
+        />
+        {err && <p className="text-red-400 text-xs">{err}</p>}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" disabled={busy || code.length < 6}>
+            {busy ? "Verifying…" : "Verify & publish"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
