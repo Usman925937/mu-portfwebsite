@@ -456,14 +456,23 @@ function ReauthModal({
 
 type SetData = React.Dispatch<React.SetStateAction<PortfolioData>>;
 
-function Editor({ data, setData }: { data: PortfolioData; setData: SetData }) {
+function Editor({
+  data,
+  setData,
+  onSecurityChange,
+}: {
+  data: PortfolioData;
+  setData: SetData;
+  onSecurityChange: () => void;
+}) {
   return (
     <Tabs defaultValue="hero" className="w-full">
-      <TabsList className="grid grid-cols-5 mb-4">
+      <TabsList className="grid grid-cols-6 mb-4">
         <TabsTrigger value="hero">Hero</TabsTrigger>
         <TabsTrigger value="experience">Experience</TabsTrigger>
         <TabsTrigger value="projects">Projects</TabsTrigger>
         <TabsTrigger value="contact">Contact</TabsTrigger>
+        <TabsTrigger value="users">Users</TabsTrigger>
         <TabsTrigger value="advanced">Advanced</TabsTrigger>
       </TabsList>
 
@@ -478,6 +487,9 @@ function Editor({ data, setData }: { data: PortfolioData; setData: SetData }) {
       </TabsContent>
       <TabsContent value="contact">
         <ContactEditor data={data} setData={setData} />
+      </TabsContent>
+      <TabsContent value="users">
+        <UsersEditor onSecurityChange={onSecurityChange} />
       </TabsContent>
       <TabsContent value="advanced">
         <AdvancedEditor data={data} setData={setData} />
