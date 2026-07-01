@@ -4,7 +4,6 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_DATA, render, type PortfolioData } from "./portfolio-render";
-import { requireFreshTotp } from "./admin-auth.functions";
 
 function serverPublicClient() {
   return createClient<Database>(
@@ -111,15 +110,6 @@ export const savePortfolioData = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden: admin role required");
-    // Require fresh 2FA if the admin has TOTP enabled.
-    const { data: profile } = await supabase
-      .from("admin_profiles")
-      .select("totp_enabled")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (profile?.totp_enabled) {
-      requireFreshTotp(userId);
-    }
     // validate JSON
     try {
       JSON.parse(data.json);

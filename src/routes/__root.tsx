@@ -77,20 +77,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Your Website Loader displays a personal portfolio website, showcasing professional experience and projects." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Your Website Loader displays a personal portfolio website, showcasing professional experience and projects." },
+      { title: "Muhammad Usman — Data-Driven Audit Professional" },
+      {
+        name: "description",
+        content:
+          "Portfolio of Muhammad Usman, data-driven audit professional with expertise in financial modeling, Excel, SQL, and Python.",
+      },
+      { name: "author", content: "Muhammad Usman" },
+      { property: "og:title", content: "Muhammad Usman — Data-Driven Audit Professional" },
+      {
+        property: "og:description",
+        content:
+          "Portfolio of Muhammad Usman, data-driven audit professional with expertise in financial modeling, Excel, SQL, and Python.",
+      },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Your Website Loader displays a personal portfolio website, showcasing professional experience and projects." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d4134601-a19b-4c11-96b4-143f7270b218/id-preview-29987c94--846a42ff-ec52-4a0a-880b-4472cbbdd510.lovable.app-1781676498280.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d4134601-a19b-4c11-96b4-143f7270b218/id-preview-29987c94--846a42ff-ec52-4a0a-880b-4472cbbdd510.lovable.app-1781676498280.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Muhammad Usman — Data-Driven Audit Professional" },
+      {
+        name: "twitter:description",
+        content:
+          "Portfolio of Muhammad Usman, data-driven audit professional with expertise in financial modeling, Excel, SQL, and Python.",
+      },
     ],
     links: [
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,

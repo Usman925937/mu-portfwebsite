@@ -18,7 +18,7 @@ import {
   rejectUser,
   startTotpEnrollment,
   verifyTotp,
-} from "@/lib/admin-auth.functions";
+} from "@/lib/admin-auth";
 import {
   DEFAULT_DATA,
   render,
