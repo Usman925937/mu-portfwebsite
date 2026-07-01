@@ -289,8 +289,12 @@ function renderExperience(items: Experience[]): string {
 
 function renderProjects(items: Project[]): string {
   return items
-    .map(
-      (p) => `<div class="pcard" data-cat="${escAttr(
+    .map((p) => {
+      const isExcel = /\bexcel\b|\bfinance\b|\bpowerbi\b/i.test(p.category);
+      const linkUrl = isExcel ? ONEDRIVE_FOLDER_URL : p.githubUrl;
+      const linkLabel = isExcel ? "Open in OneDrive" : "View on GitHub";
+      const linkIcon = isExcel ? ONEDRIVE_SVG : GITHUB_SVG;
+      return `<div class="pcard" data-cat="${escAttr(
         p.category,
       )}"><div class="pcard-inner"><div class="pcard-f"><div class="p-type">${esc(
         p.type,
@@ -307,9 +311,9 @@ function renderProjects(items: Project[]): string {
         .join(
           "",
         )}<a href="${escAttr(
-        p.githubUrl,
-      )}" target="_blank" rel="noopener" class="p-github">${GITHUB_SVG} View on GitHub</a></div></div></div></div>`,
-    )
+        linkUrl,
+      )}" target="_blank" rel="noopener" class="p-github">${linkIcon} ${linkLabel}</a></div></div></div></div>`;
+    })
     .join("\n    ");
 }
 
