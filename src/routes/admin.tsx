@@ -44,7 +44,7 @@ function AdminAuthPage() {
     };
   }, [navigate]);
 
-  const canSignUp = adminExists === false;
+  const canSignUp = true; // signups always allowed; new accounts go to pending approval
   const effectiveMode = canSignUp ? mode : "signin";
 
   async function handleSubmit(e: React.FormEvent) {

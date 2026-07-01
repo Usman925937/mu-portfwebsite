@@ -1,60 +1,69 @@
-## Goal
+# Admin Security Hardening
 
-Replace the raw HTML editor in `/admin-dashboard` with a Hostinger-style **form-based editor**. You type into labelled fields per section, click **Save & publish**, and the live homepage updates — no HTML ever shown.
+Layer three protections on top of the existing email/password admin login:
+1. **Authenticator-app 2FA (TOTP)** required on every admin sign-in
+2. **Admin approval** for anyone who signs up
+3. **Re-authentication** (fresh TOTP code) before publishing changes
 
-## How it will work
+## User experience
 
-```text
- Admin Dashboard                       Database                Homepage
- ┌─────────────────────┐               ┌────────────┐         ┌─────────┐
- │ Hero    [form]      │  save JSON →  │ site_content│  read  │  /      │
- │ About   [form]      │               │  id=        │  JSON  │ renders │
- │ Experience [list]   │               │  portfolio_ │   →    │ template│
- │ Projects   [list]   │               │  data       │ inject │ + data  │
- │ Skills    [chips]   │               │  (JSON)    │ values │         │
- │ Contact   [form]    │               └────────────┘         └─────────┘
- │ [Save & publish]    │
- └─────────────────────┘
-```
+**First-time setup (you, the existing admin)**
+- After signing in, if 2FA isn't enabled yet, the dashboard shows a "Set up 2FA" screen with a QR code + secret key.
+- You scan it in Google Authenticator / Authy / 1Password, enter a 6-digit code to confirm, and 2FA is locked on.
+- A set of one-time backup codes is shown once so you can recover if you lose your phone.
 
-- Your portfolio HTML stays as the **design template** — the look never changes.
-- Editable bits inside the template get wrapped with hidden marker comments (`<!--CMS:hero.eyebrow-->…<!--/CMS-->`). They are invisible on the live site.
-- A render function on the server takes your saved data and swaps the values into the template every time the homepage loads.
+**Normal sign-in**
+- Enter email + password → prompted for the 6-digit code from your authenticator app → dashboard loads.
+- Wrong code just re-prompts; 5 wrong codes in a row temporarily blocks further attempts for 15 minutes.
 
-## Sections covered by the form editor
+**Publishing edits (re-auth)**
+- When you click "Save & Publish", a modal asks for a fresh 6-digit code before the changes are written to the live site.
+- The re-auth lasts 5 minutes, so several saves in a row only prompt once.
 
-| Tab | Fields |
-|---|---|
-| **Hero** | Eyebrow line · First name · Last name · Subtitle · Description (rich text) · 4 stat cards (number + label) · 3 floating chips · "View My Work" CTA · LinkedIn CTA |
-| **About** | 4 paragraphs (rich text) · 4 highlight rows (title + description) |
-| **Experience** | Add/edit/delete/reorder job cards: role · company · bullets · skill tags · date · type · location |
-| **Projects** | Add/edit/delete/reorder project cards: category · title · description · front tags · "what's inside" text · back tags · GitHub URL · filter category |
-| **Skills + Certifications** | Skill node labels (Excel, SQL, Python, Power BI, Financial Modeling, etc.) · Certification list (title + issuer + image URL) |
-| **Contact** | Intro note · LinkedIn URL · GitHub URL · 4 availability rows (label + text) · Footer copyright |
-| **Advanced** | Raw HTML override (kept as escape hatch — anything pasted here replaces the whole page) |
+**New signups**
+- The `/admin` page still lets anyone create an account, but new accounts land in a "Pending approval" state and see a friendly "Waiting for admin approval" screen instead of the dashboard.
+- A new **Users** tab in your dashboard lists pending accounts with **Approve** / **Reject** buttons. Only approved users can proceed to 2FA setup and the editor.
 
-Sections **not** in the form editor because they're pure visual design with no real content to change: orbit animation, "Why Hire Me" grid, Education timeline visuals, Recommendations layout. Their text can still be edited via the Advanced tab if needed.
+## Technical details
 
-## Behaviour
+**Database (new migration)**
+- `admin_profiles` table: `user_id` (PK, FK → auth.users), `totp_secret` (encrypted), `totp_enabled` bool, `backup_codes` (hashed array), `failed_attempts` int, `locked_until` timestamptz.
+- `user_roles` gains a new enum value `pending` (default for new signups). Existing `admin` rows unchanged; `has_role` continues to work.
+- New enum value requires a small helper: `approve_admin(user_id)` SECURITY DEFINER function that only current admins can call.
 
-- **Live preview** on the right side of the dashboard updates as you type (debounced 500ms).
-- **Add / Remove / Move up / Move down** buttons on every list item.
-- **Reset section to default** button per tab.
-- **Save & publish** button writes the JSON to the database; the live homepage picks it up on next visit.
-- First load: if no saved data exists, forms are prefilled with the current portfolio content as defaults.
+**TOTP implementation**
+- Use `otpauth` npm package (pure JS, Worker-compatible) for secret generation + code verification (RFC 6238, 30s window, ±1 step tolerance).
+- Secret is generated server-side, stored encrypted at rest with an app secret (`ADMIN_TOTP_ENC_KEY`, auto-generated).
+- QR code rendered client-side with `qrcode` package (data URL, no external service).
 
-## Technical details (for reference)
+**Server functions** (`src/lib/admin-auth.functions.ts`, all `.middleware([requireSupabaseAuth])`)
+- `getAdminStatus` — returns `{ role, totpEnabled, approved }` for the current user.
+- `startTotpEnrollment` — generates secret, returns provisioning URI + backup codes (only if not yet enabled).
+- `confirmTotpEnrollment({ code })` — verifies code, marks `totp_enabled = true`.
+- `verifyTotp({ code })` — verifies code, sets a short-lived signed cookie `admin_2fa_verified` (15 min for session, 5 min for re-auth).
+- `listPendingUsers` / `approveUser({ userId })` / `rejectUser({ userId })` — admin-only.
+- `savePortfolioData` (existing) gains a check that `admin_2fa_verified` cookie is fresh (≤ 5 min old) or throws → triggers the re-auth modal.
 
-- Move `public/portfolio.html` → `src/lib/portfolio-template.html` and import it with `?raw` so the server can read it inside the Worker runtime.
-- Add `<!--CMS:key-->…<!--/CMS:key-->` markers around editable text and list containers in the template (no visual change).
-- New `src/lib/portfolio-render.ts`: `PortfolioData` type, defaults matching current content, `render(data): string` that does marker replacement + list rendering with HTML escaping.
-- Update `src/lib/site-content.functions.ts`: add `getPortfolioData` (public read) and `savePortfolioData` (admin write) using the existing `site_content` table with a new row `id='portfolio_data'` storing the JSON in the `html` column. No DB migration needed.
-- Update `src/routes/index.tsx`: call `getPortfolioHtml` which now renders template + saved data and returns HTML for the iframe `srcDoc`.
-- Rewrite `src/routes/_authenticated/admin-dashboard.tsx`: tabbed UI (shadcn `Tabs`) with one form per section, repeater components for Experience/Projects/Certifications/Highlights, live `<iframe>` preview, Save button.
-- Raw HTML override stays available under an **Advanced** tab and, when set, completely bypasses the template.
+**Routes**
+- `/admin` (existing) — sign in / sign up form; on success routes based on status.
+- `/admin-dashboard` (existing, protected) gains an inner gate:
+  - `role = pending` → "Awaiting approval" screen.
+  - `role = admin` + `totp_enabled = false` → "Set up 2FA" screen.
+  - `role = admin` + `totp_enabled = true` + no fresh 2FA cookie → "Enter 6-digit code" screen.
+  - Otherwise → full dashboard, now with a **Users** tab.
 
-## Out of scope (this turn)
+**Rate limiting**
+- Track `failed_attempts` and `locked_until` on `admin_profiles`. 5 fails → 15-min lock. Cleared on any successful verify.
 
-- Image uploads (cert images stay as URLs you paste; can add storage uploads later).
-- Drag-and-drop reordering (using up/down arrow buttons instead — keeps it simple).
-- Theme/color editing (your design system stays fixed).
+**Secrets**
+- `ADMIN_TOTP_ENC_KEY` — auto-generated 64-char secret for encrypting TOTP secrets at rest.
+- `ADMIN_2FA_COOKIE_SECRET` — auto-generated 64-char secret for signing the 2FA-verified cookie.
+
+**Packages to add**
+- `otpauth` (TOTP), `qrcode` (QR image data URL).
+
+## Out of scope
+
+- Email/SMS delivery of codes (you chose authenticator app).
+- Recovery via email — recovery is only via backup codes shown at setup time.
+- Multiple admin roles / permissions beyond `admin` vs `pending`.
