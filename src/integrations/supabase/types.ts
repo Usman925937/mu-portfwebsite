@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          backup_codes_hashed: string[]
+          created_at: string
+          failed_attempts: number
+          locked_until: string | null
+          totp_enabled: boolean
+          totp_secret_enc: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes_hashed?: string[]
+          created_at?: string
+          failed_attempts?: number
+          locked_until?: string | null
+          totp_enabled?: boolean
+          totp_secret_enc?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes_hashed?: string[]
+          created_at?: string
+          failed_attempts?: number
+          locked_until?: string | null
+          totp_enabled?: boolean
+          totp_secret_enc?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_content: {
         Row: {
           html: string
@@ -63,6 +96,7 @@ export type Database = {
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
       claim_first_admin: { Args: never; Returns: boolean }
+      current_admin_has_totp: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -70,6 +104,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      promote_to_admin: { Args: { _target: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin"
