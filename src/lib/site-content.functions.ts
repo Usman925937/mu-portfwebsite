@@ -111,6 +111,15 @@ export const savePortfolioData = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden: admin role required");
+    // Require fresh 2FA if the admin has TOTP enabled.
+    const { data: profile } = await supabase
+      .from("admin_profiles")
+      .select("totp_enabled")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (profile?.totp_enabled) {
+      requireFreshTotp(userId);
+    }
     // validate JSON
     try {
       JSON.parse(data.json);
