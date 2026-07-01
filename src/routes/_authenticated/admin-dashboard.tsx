@@ -942,3 +942,85 @@ function Repeater<T>({
     </div>
   );
 }
+
+function UsersEditor({ onSecurityChange }: { onSecurityChange: () => void }) {
+  const list = useServerFn(listPendingUsers);
+  const approve = useServerFn(approveUser);
+  const reject = useServerFn(rejectUser);
+  const disable = useServerFn(disableTotp);
+  const [pending, setPending] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
+  const [admins, setAdmins] = useState<Array<{ id: string; email: string; isSelf: boolean }>>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setErr(null); setBusy(true);
+    try {
+      const r = await list();
+      setPending(r.pending);
+      setAdmins(r.admins);
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  }, [list]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function act(fn: () => Promise<unknown>, label: string) {
+    setBusy(true); setErr(null); setMsg(null);
+    try { await fn(); setMsg(label); await load(); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <Section title="Users" description="Approve or remove admin accounts.">
+      {err && <p className="text-red-400 text-sm">{err}</p>}
+      {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
+
+      <div className="space-y-2">
+        <Label className="text-xs uppercase tracking-wider opacity-80">
+          Pending approval ({pending.length})
+        </Label>
+        {pending.length === 0 && <p className="text-xs opacity-60">No pending signups.</p>}
+        {pending.map((u) => (
+          <div key={u.id} className="flex items-center justify-between border border-white/10 rounded p-2 bg-white/[0.02]">
+            <div>
+              <div className="text-sm">{u.email}</div>
+              <div className="text-[10px] opacity-50">signed up {new Date(u.createdAt).toLocaleString()}</div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => act(() => approve({ data: { userId: u.id } }), "User approved as admin.")} disabled={busy}>Approve</Button>
+              <Button size="sm" variant="outline" onClick={() => act(() => reject({ data: { userId: u.id } }), "User removed.")} disabled={busy}>Reject</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-2 mt-6">
+        <Label className="text-xs uppercase tracking-wider opacity-80">
+          Admins ({admins.length})
+        </Label>
+        {admins.map((u) => (
+          <div key={u.id} className="flex items-center justify-between border border-white/10 rounded p-2 bg-white/[0.02]">
+            <div className="text-sm">
+              {u.email} {u.isSelf && <span className="text-[10px] text-[#c9a84c] ml-1">(you)</span>}
+            </div>
+            {!u.isSelf && (
+              <Button size="sm" variant="outline" onClick={() => act(() => reject({ data: { userId: u.id } }), "Admin removed.")} disabled={busy}>Remove</Button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8 border-t border-white/10 pt-4 space-y-2">
+        <Label className="text-xs uppercase tracking-wider opacity-80 text-red-300">Danger zone</Label>
+        <p className="text-xs opacity-60">
+          Disable your 2FA. You'll be prompted to set it up again on the next sign-in.
+        </p>
+        <Button size="sm" variant="outline" onClick={() => act(async () => { await disable(); onSecurityChange(); }, "2FA disabled.")} disabled={busy}>
+          Disable my 2FA
+        </Button>
+      </div>
+    </Section>
+  );
+}
